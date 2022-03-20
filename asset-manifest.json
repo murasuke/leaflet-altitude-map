@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/leaflet-altitude-map/static/css/main.1443dc1b.css",
+    "main.js": "/leaflet-altitude-map/static/js/main.822b54ad.js",
+    "index.html": "/leaflet-altitude-map/index.html",
+    "main.1443dc1b.css.map": "/leaflet-altitude-map/static/css/main.1443dc1b.css.map",
+    "main.822b54ad.js.map": "/leaflet-altitude-map/static/js/main.822b54ad.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1443dc1b.css",
+    "static/js/main.822b54ad.js"
+  ]
+}
