@@ -1,5 +1,5 @@
 {
-  "name": "leaflet-test",
+  "name": "leaflet-altitude-map",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
