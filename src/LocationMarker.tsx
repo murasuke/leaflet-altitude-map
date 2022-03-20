@@ -1,9 +1,10 @@
-import { VFC, useState } from 'react';
+import { VFC, useState, useEffect } from 'react';
 import { LatLng } from 'leaflet';
 import { Marker, Popup, useMapEvents } from 'react-leaflet';
 import { getAltitude, AltitudeDetail } from './utils/altitude';
 
 type propType = {
+  initPos: LatLng;
   altitude?: AltitudeDetail;
   setAltitude: React.Dispatch<React.SetStateAction<AltitudeDetail | undefined>>;
 };
@@ -13,8 +14,8 @@ type propType = {
  * ・クリックした位置にアイコン表示する
  * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
  */
-const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
-  const [position, setPosition] = useState<LatLng | null>(null);
+const LocationMarker: VFC<propType> = ({ initPos, setAltitude, altitude }) => {
+  const [position, setPosition] = useState<LatLng | null>(initPos);
   useMapEvents({
     click(e) {
       setPosition(e.latlng);
@@ -23,10 +24,20 @@ const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
       getAltitude(lat, lng, (alt, altDetail) => {
         console.log(`標高:${alt}m`);
         console.log(`緯度:${altDetail?.pos.lat} 経度:${altDetail?.pos.lng}`);
-        setAltitude(altDetail);
+        if (altDetail) {
+          setAltitude(altDetail);
+        }
       });
     },
   });
+
+  useEffect(() => {
+    getAltitude(initPos.lat, initPos.lng, (alt, altDetail) => {
+      if (altDetail) {
+        setAltitude(altDetail);
+      }
+    });
+  }, [initPos, setAltitude]);
 
   return position === null ? null : (
     <Marker position={position}>
