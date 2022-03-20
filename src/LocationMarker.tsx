@@ -21,7 +21,7 @@ const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
       const { lat, lng } = e.latlng;
       // 標高を取得
       getAltitude(lat, lng, (alt, altDetail) => {
-        console.log(alt + 'm');
+        console.log(`標高:${alt}m`);
         console.log(`緯度:${altDetail?.pos.lat} 経度:${altDetail?.pos.lng}`);
         setAltitude(altDetail);
       });
