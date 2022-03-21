@@ -7,10 +7,19 @@
 /* カーソルを標準に戻す(標準の手アイコンは位置を正確に選択しづらい) */
 .leaflet-grab {cursor: auto;}
 
-/* 位置表示エリア */
+/* 位置表示エリア(AltitudeArea) */
 .coords {
   font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
   font-size: 16px;
-  margin : 0.5em 1em;
-  padding: 0;
+  margin : 0em 1em;
+  user-select:none;
+}
+
+
+.leaflet-control-GPS {
+  font-weight: 700;
+  padding: 6px 3px;
+  background-color:dimgray;
+  color:white;
+  user-select:none;
 }

@@ -1,18 +1,21 @@
-# React-leafletで標高表示機能付きマップを作る
+# React-Leafletで標高表示機能付きマップを作る
 
 https://murasuke.github.io/leaflet-altitude-map/
 
 ## はじめに
 
-地図を見ているとその場所の標高が気になりませんか？
+地図を見ているとその場所の標高が知りたいと思うときがありませんか？
 
-[GoogleMap](https://www.google.co.jp/maps/)では任意の場所の標高がわからず何とかしたいと思っていました。
+いつも使っている[GoogleMap](https://www.google.co.jp/maps/)では任意の場所の標高がわからず何とかしたいと思っていました。
 
-国土地理院のサイトで[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)が公開されていますが、JQueryを使っているため、そのままではReactで利用ができません。
+まず地図を作ってみましたが([React Leaflet](https://react-leaflet.js.org/))が、標高はどうすれば良いのでしょうか？
 
-という訳でサンプルを改修して、Reactで作った地図アプリに組み込んでみようと思います。
+調べてみると、国土地理院のサイトで[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)が公開されています。JQueryを使っているため、そのままではReactで利用ができませんが、改修すれば何とかなりそうです。
 
-地図データは国土地理院のデータを利用しています。出展の明示のみで利用可能です。
+という訳で[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)を改修して、地図アプリに組み込んでみようと思います。
+
+
+地図データは国土地理院のデータを利用しています。リアルタイムに地図を表示するプログラムであれば、出展の明示のみで利用可能なようです。
 
 
 [地図の利用手続パンフレット](https://www.gsi.go.jp/common/000223838.pdf)より抜粋
@@ -23,13 +26,21 @@ https://murasuke.github.io/leaflet-altitude-map/
 ただき、地理院タイル一覧ページ（https://maps.gsi.go.jp/development/ichiran.html）へのリンクを付けてください。
 ```
 
+一度に実装するのは大変なので４段階に分けて実装しようと思います
+
+  * ①最低限の地図アプリを作成する
+  * ②クリックした場所の標高を表示する機能を追加する
+  * ③現在位置を地図の初期表示位置にする
+  * ④GPSボタンを追加して現在位置に戻せるようにする
+
+
 ---
 ### 国土地理院の解説ページ
 
 * [標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)
 * [標高タイルの詳細仕様](https://maps.gsi.go.jp/development/demtile.html)
 
-### 標高の求め方
+### 標高の求め方について
 
   * 入力した経緯度値から、その場所に該当する「標高タイル」（PNG形式）をクライアントにダウンロード
   * 入力した経緯度値に該当する「標高タイル」のピクセルの画素値（RGB値）から、標高値が算出する
@@ -41,6 +52,8 @@ https://murasuke.github.io/leaflet-altitude-map/
 
 * Reactの基本的な機能を理解していること
 
+
+
 ## React-Leaflet のインストール
 ```
 $ npx create-react-app leaflet-altitude-map --template typescript --use-npm
@@ -49,7 +62,9 @@ $ npm i leaflet react-leaflet
 $ npm i -D @types/leaflet
 ```
 
-## ①最小限の地図サンプル
+
+
+## ①最低限の地図アプリを作成する
 
 * 地図とマーカーを表示します
 * ドラッグ＆ドロップによる移動や、マウスホイールによる拡大縮小もできます
@@ -142,7 +157,7 @@ npm run start
 ```
 ---
 
-## ②クリックした場所の標高を取得する機能を追加
+## ②クリックした場所の標高を表示する機能を追加する
 
 * クリックした場所の標高と位置を表示します
 
@@ -511,11 +526,24 @@ export const getAltitude = (
  * 右上に表示
  * propsで受け取った値を表示する
 
+画面の四隅にアイコンや表示領域を配置するために(@skyeer/react-leaflet-custom-control)[https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control]を利用します。
+
+
+* インストール
+```bash
+npm install @skyeer/react-leaflet-custom-control
+```
+
+* 使い方
+  * positionで表示位置を指定。Control内部は任意に表示内容を記載します。
+
+
 src/AltitudeArea.tsx
 
 ```tsx
-import { VFC } from "react";
-import { AltitudeDetail } from "./utils/altitude";
+import { VFC } from 'react';
+import Control from 'react-leaflet-custom-control';
+import { AltitudeDetail } from './utils/altitude';
 
 /**
  * 情報表示エリア
@@ -524,21 +552,18 @@ import { AltitudeDetail } from "./utils/altitude";
  */
 const AltitudeArea: VFC<{ altitude?: AltitudeDetail }> = ({ altitude }) => {
   const f = (num: number, fixed = 7) =>
-    ("             " + num.toFixed(fixed)).slice(-6 - fixed);
+    ('             ' + num.toFixed(fixed)).slice(-6 - fixed);
   const formatAlt = (alt: AltitudeDetail) =>
     `標高:${f(alt.h ?? 0, alt.fixed)}m\n緯度:${f(alt.pos.lat)}\n経度:${f(
-      alt.pos.lng
+      alt.pos.lng,
     )}`;
 
   return (
-    <div className={"leaflet-top leaflet-right"}>
-      <div
-        className="leaflet-control leaflet-bar"
-        style={{ width: "200px", backgroundColor: "Lavender" }}
-      >
-        <pre className="coords">{altitude ? formatAlt(altitude) : ""}</pre>
+    <Control position="topright">
+      <div style={{ width: '200px', backgroundColor: 'Lavender' }}>
+        <pre className="coords">{altitude ? formatAlt(altitude) : ''}</pre>
       </div>
-    </div>
+    </Control>
   );
 };
 
@@ -547,7 +572,7 @@ export default AltitudeArea;
 
 ### ②-3位置表示アイコン
  * クリックした位置にアイコン表示する
- * 位置(経度、緯度)を元に標高を取得し、情報表示エリアに引き渡す(state経由)
+ * 位置(経度、緯度)を元に標高を取得し、情報表示エリアを更新する(state経由)
 
 src/LocationMarker.tsx
 
@@ -612,7 +637,7 @@ src/App.css
 
 src/App.tsx
 
- ```tsx
+```tsx
 import { VFC, useState } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "./utils/initLeaflet";
@@ -644,3 +669,71 @@ const App: VFC = () => {
 };
 export default App;
  ```
+### ②-5ブラウザで表示して動作を確認
+
+```bash
+npm run start
+```
+
+クリックした位置にマーカーが表示されるのと同時に、位置情報が更新されます。
+
+![img20](./img/img20.png)
+
+---
+
+## ③現在位置を地図の初期表示位置にする
+
+* navigator.geolocation.getCurrentPosition()で現在位置を取得して表示
+
+```tsx
+import { VFC, useState, useEffect } from "react";
+import { MapContainer, TileLayer } from "react-leaflet";
+import "./utils/initLeaflet";
+import { AltitudeDetail } from "./utils/altitude";
+import AltitudeArea from "./AltitudeArea";
+import LocationMarker from "./LocationMarker";
+
+import "leaflet/dist/leaflet.css";
+import "./App.css";
+
+/**
+ * 地図表示
+ * ・上記で作成した「情報エリア」「位置表示アイコン」を表示する
+ * ・位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+ */
+const App: VFC = () => {
+  const [altitude, setAltitude] = useState<AltitudeDetail>();
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((e) => {
+      const position = new LatLng(e.coords.latitude, e.coords.longitude);
+      setAltitude({
+        fixed: 0,
+        h: 0,
+        pos: { ...position, zoom: 14 },
+        title: '',
+        type: '',
+      });
+    });
+  }, []);
+
+  if (!altitude) {
+    return <></>;
+  } else {
+    return (
+      <MapContainer center={altitude.pos} zoom={14}>
+        <TileLayer
+          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+        />
+        <AltitudeArea altitude={altitude} />
+        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
+      </MapContainer>
+    );
+  }
+};
+export default App;
+ ```
+
+## ④GPSボタンを追加して現在位置に戻せるようにする
+

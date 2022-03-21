@@ -1,4 +1,5 @@
 import { VFC } from 'react';
+import Control from 'react-leaflet-custom-control';
 import { AltitudeDetail } from './utils/altitude';
 
 /**
@@ -15,14 +16,11 @@ const AltitudeArea: VFC<{ altitude?: AltitudeDetail }> = ({ altitude }) => {
     )}`;
 
   return (
-    <div className={'leaflet-top leaflet-right'}>
-      <div
-        className="leaflet-control leaflet-bar"
-        style={{ width: '200px', backgroundColor: 'Lavender' }}
-      >
+    <Control position="topright">
+      <div style={{ backgroundColor: 'Lavender' }}>
         <pre className="coords">{altitude ? formatAlt(altitude) : ''}</pre>
       </div>
-    </div>
+    </Control>
   );
 };
 

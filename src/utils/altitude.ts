@@ -1,5 +1,7 @@
 import Leaflet from 'leaflet';
-
+export type setAltState = React.Dispatch<
+  React.SetStateAction<AltitudeDetail | undefined>
+>;
 type LeafletClass = (new (...args: any[]) => any) & typeof Leaflet.Class;
 
 type UrlInfo = {

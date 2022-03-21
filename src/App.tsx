@@ -1,10 +1,12 @@
 import { VFC, useState, useEffect } from 'react';
 import { LatLng } from 'leaflet';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
+import Control from 'react-leaflet-custom-control';
 import './utils/initLeaflet';
 import { AltitudeDetail } from './utils/altitude';
 import AltitudeArea from './AltitudeArea';
 import LocationMarker from './LocationMarker';
+import GPS from './GPS';
 
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -19,7 +21,7 @@ const App: VFC = () => {
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
-      let position = new LatLng(e.coords.latitude, e.coords.longitude);
+      const position = new LatLng(e.coords.latitude, e.coords.longitude);
       setAltitude({
         fixed: 0,
         h: 0,
@@ -39,12 +41,17 @@ const App: VFC = () => {
           attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
           url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
         />
+
+        {/* <TileLayer
+          attribution='&copy; <a href="https://www.j-shis.bosai.go.jp/landslidemap">防災科研</a>'
+          url="https://jmapweb3v.bosai.go.jp/map/xyz/landslide/{z}/{x}/{y}.png"
+          opacity={0.4}
+        /> */}
+
         <AltitudeArea altitude={altitude} />
-        <LocationMarker
-          initPos={new LatLng(altitude.pos.lat, altitude.pos.lng)}
-          altitude={altitude}
-          setAltitude={setAltitude}
-        />
+        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
+        <GPS setAltitude={setAltitude} />
+        <ScaleControl />
       </MapContainer>
     );
   }
