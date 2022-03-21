@@ -21,7 +21,6 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   );
   useMapEvents({
     click(e) {
-      // setPosition(e.latlng);
       const { lat, lng } = e.latlng;
       // 標高を取得
       getAltitude(lat, lng, (alt, altDetail) => {
