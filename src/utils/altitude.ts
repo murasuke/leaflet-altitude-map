@@ -1,4 +1,21 @@
+/**
+ * 標高を求めるプログラム
+ * https://maps.gsi.go.jp/development/elevation.html
+ * ・国土地理院の「標高を求めるプログラム(https://maps.gsi.go.jp/development/elevation.html)」を参考にしました
+ * ・関数「getAltitude()」で指定した位置の標高をcallback関数で返します。
+ * ■概略(国土地理院のサンプル解説から引用)
+ * 　・入力した経緯度値から、その場所に該当する「標高タイル」（PNG形式）をクライアントにダウンロードしてきます。
+ * 　・入力した経緯度値に該当する「標高タイル」のピクセルの画素値（RGB値）から、標高値が算出されます。
+ * 　・「標高タイル」には、「DEM5A」、「DEM5B」、「DEM5C」、「DEM10B」、「DEMGM」の4種類があります（本サンプルプログラムでは「DEMGM」は使用していません）。
+ * 　・標高タイルの精度は、「DEM5A」＞「DEM5B」＞「DEM5C」＞「DEM10B」＞「DEMGM」の順に高精度になります。
+ * 　・「DEM5A」、「DEM5B」及び「DEM5C」は、日本全国の範囲でデータが整備されていません。
+ * 　・そのため、本プログラムでは、まず「DEM5A」のデータを探して、なければ「DEM5B」、「DEM5B」もなければ「DEM5C」、最後に「DEM10B」を使用するという処理をしています。
+ * 　・また、海部などデータが存在しないところのピクセル値は、(R,G,B)=(128,0,0)となっています。
+ * 　・標高タイルの詳細仕様はこちらを参照してください。
+ */
+
 import Leaflet from 'leaflet';
+
 export type setAltState = React.Dispatch<
   React.SetStateAction<AltitudeDetail | undefined>
 >;
@@ -41,23 +58,6 @@ type GSIType = {
   content?: LeafletClass & { execRefresh: funcRefresh };
 };
 
-/**
- * 位置から標高を求める
- * https://maps.gsi.go.jp/development/elevation.html
- * ・国土地理院の「標高を求めるプログラム(https://maps.gsi.go.jp/development/elevation.html)」を参考にしました
- * ・関数「getAltitude()」で指定した位置の標高をcallback関数で返します。
- * ■概略(国土地理院のサンプル解説から引用)
- * 　・入力した経緯度値から、その場所に該当する「標高タイル」（PNG形式）をクライアントにダウンロードしてきます。
- * 　・入力した経緯度値に該当する「標高タイル」のピクセルの画素値（RGB値）から、標高値が算出されます。
- * 　・「標高タイル」には、「DEM5A」、「DEM5B」、「DEM5C」、「DEM10B」、「DEMGM」の4種類があります（本サンプルプログラムでは「DEMGM」は使用していません）。
- * 　・標高タイルの精度は、「DEM5A」＞「DEM5B」＞「DEM5C」＞「DEM10B」＞「DEMGM」の順に高精度になります。
- * 　・「DEM5A」、「DEM5B」及び「DEM5C」は、日本全国の範囲でデータが整備されていません。
- * 　・そのため、本プログラムでは、まず「DEM5A」のデータを探して、なければ「DEM5B」、「DEM5B」もなければ「DEM5C」、最後に「DEM10B」を使用するという処理をしています。
- * 　・また、海部などデータが存在しないところのピクセル値は、(R,G,B)=(128,0,0)となっています。
- * 　・標高タイルの詳細仕様はこちらを参照してください。
-
- *
- */
 const GSI: GSIType = {
   Footer: Leaflet.Class.extend({
     initialize() {},

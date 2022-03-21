@@ -1,4 +1,4 @@
-import { VFC, useState, useEffect, useCallback } from 'react';
+import { VFC, useEffect, useCallback } from 'react';
 import { LatLng } from 'leaflet';
 import { Marker, Popup, useMapEvents } from 'react-leaflet';
 import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
@@ -11,15 +11,13 @@ type propType = {
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコン表示する
- * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
+ * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
  * ・親から渡された位置が変わった場合、標高を再取得する
  */
 const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   const { pos } = altitude;
   const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const [position, setPosition] = useState<LatLng | null>(
-    new LatLng(pos.lat, pos.lng),
-  );
+  const position = new LatLng(pos.lat, pos.lng);
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
@@ -36,7 +34,6 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
 
   // 親から渡された位置が変わった場合、標高を再取得
   useEffect(() => {
-    setPosition(new LatLng(pos.lat, pos.lng));
     getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
       if (altDetail) {
         callback(altDetail);

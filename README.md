@@ -1,6 +1,10 @@
 # React-Leafletで標高表示機能付きマップを作る
 
+サンプルページ：
 https://murasuke.github.io/leaflet-altitude-map/
+
+ソース：
+
 
 ## はじめに
 
@@ -8,15 +12,12 @@ https://murasuke.github.io/leaflet-altitude-map/
 
 いつも使っている[GoogleMap](https://www.google.co.jp/maps/)では任意の場所の標高がわからず何とかしたいと思っていました。
 
-まず地図を作ってみましたが([React Leaflet](https://react-leaflet.js.org/))が、標高はどうすれば良いのでしょうか？
-
 調べてみると、国土地理院のサイトで[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)が公開されています。JQueryを使っているため、そのままではReactで利用ができませんが、改修すれば何とかなりそうです。
 
-という訳で[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)を改修して、地図アプリに組み込んでみようと思います。
+という訳で[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)を改修して、地図アプリ([React Leaflet](https://react-leaflet.js.org/))に組み込んでみようと思います。
 
 
-地図データは国土地理院のデータを利用しています。リアルタイムに地図を表示するプログラムであれば、出展の明示のみで利用可能なようです。
-
+* 地図データは国土地理院のデータを利用しています。リアルタイムに地図を表示するプログラムであれば、出展の明示のみで利用可能なようです。
 
 [地図の利用手続パンフレット](https://www.gsi.go.jp/common/000223838.pdf)より抜粋
 ```
@@ -28,13 +29,14 @@ https://murasuke.github.io/leaflet-altitude-map/
 
 一度に実装するのは大変なので４段階に分けて実装しようと思います
 
-  * ①最低限の地図アプリを作成する
+  * ①[React Leaflet](https://react-leaflet.js.org/)を利用して最低限の地図アプリを作成する
   * ②クリックした場所の標高を表示する機能を追加する
-  * ③現在位置を地図の初期表示位置にする
+  * ③初期表示位置を現在の位置に変更する
   * ④GPSアイコンを追加して現在位置に戻せるようにする
 
 
 ---
+### ※参考
 ### 国土地理院の解説ページ
 
 * [標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)
@@ -50,11 +52,14 @@ https://murasuke.github.io/leaflet-altitude-map/
 
 ## 前提
 
-* Reactの基本的な機能を理解していること
+* React、TypeScript、npmの基本的な機能を理解していること
 
+## アプリケーションの作成準備
 
+### React-Leaflet のインストール
 
-## React-Leaflet のインストール
+create-react-appでアプリのテンプレートを作成し、leafletをインストールします。
+
 ```
 $ npx create-react-app leaflet-altitude-map --template typescript --use-npm
 $ cd leaflet-altitude-map
@@ -62,9 +67,7 @@ $ npm i leaflet react-leaflet
 $ npm i -D @types/leaflet
 ```
 
-
-
-## ①最低限の地図アプリを作成する
+## ①[React Leaflet](https://react-leaflet.js.org/)を利用して最低限の地図アプリを作成する
 
 * 地図とマーカーを表示します
 * ドラッグ＆ドロップによる移動や、マウスホイールによる拡大縮小もできます
@@ -102,7 +105,7 @@ Leaflet.Marker.prototype.options.icon = DefaultIcon;
 * 位置表示アイコンを`<Marker>`で表示します
 
 
-App.tsx
+src/App.tsx
 
 ```tsx
 import React, { VFC } from 'react';
@@ -165,7 +168,7 @@ npm run start
 
 ### ②-1位置から標高を取得する機能を追加
 
-[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)をこのプログラム用に移植したものです。
+国土地理院で公開されているソース[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)をこのプログラム用に書き換えたものです(JQueryを削除、TypeScriptで利用しやすいように多少の型設定追加、標高を取得する関数ををexport)
 
 * exportメソッド
   * `getAltitude(lat, lng, callback)` ：標高をcallback関数で受け取る
@@ -177,8 +180,8 @@ npm run start
 ```typescript
   import { getAltitude } from './utils/altitude';
 
-  // 標高を取得
-  getAltitude(lat, lng, (alt, altDetail) => {
+  // 標高を取得(富士山頂)
+  getAltitude(35.3607411, 138.727262, (alt, altDetail) => {
     console.log(`標高:${alt}m`);
     console.log(`緯度:${altDetail?.pos.lat} 経度:${altDetail?.pos.lng}`)
   });
@@ -187,8 +190,27 @@ npm run start
 src/utils/altitude.ts
 
 ```tsx
-import Leaflet from "leaflet";
+/**
+ * 標高を求めるプログラム
+ * https://maps.gsi.go.jp/development/elevation.html
+ * ・国土地理院の「標高を求めるプログラム(https://maps.gsi.go.jp/development/elevation.html)」を参考にしました
+ * ・関数「getAltitude()」で指定した位置の標高をcallback関数で返します。
+ * ■概略(国土地理院のサンプル解説から引用)
+ * 　・入力した経緯度値から、その場所に該当する「標高タイル」（PNG形式）をクライアントにダウンロードしてきます。
+ * 　・入力した経緯度値に該当する「標高タイル」のピクセルの画素値（RGB値）から、標高値が算出されます。
+ * 　・「標高タイル」には、「DEM5A」、「DEM5B」、「DEM5C」、「DEM10B」、「DEMGM」の4種類があります（本サンプルプログラムでは「DEMGM」は使用していません）。
+ * 　・標高タイルの精度は、「DEM5A」＞「DEM5B」＞「DEM5C」＞「DEM10B」＞「DEMGM」の順に高精度になります。
+ * 　・「DEM5A」、「DEM5B」及び「DEM5C」は、日本全国の範囲でデータが整備されていません。
+ * 　・そのため、本プログラムでは、まず「DEM5A」のデータを探して、なければ「DEM5B」、「DEM5B」もなければ「DEM5C」、最後に「DEM10B」を使用するという処理をしています。
+ * 　・また、海部などデータが存在しないところのピクセル値は、(R,G,B)=(128,0,0)となっています。
+ * 　・標高タイルの詳細仕様はこちらを参照してください。
+ */
 
+import Leaflet from 'leaflet';
+
+export type setAltState = React.Dispatch<
+  React.SetStateAction<AltitudeDetail | undefined>
+>;
 type LeafletClass = (new (...args: any[]) => any) & typeof Leaflet.Class;
 
 type UrlInfo = {
@@ -219,7 +241,7 @@ type funcRefresh = (
   lat: number,
   lon: number,
   initialz: number,
-  callback?: altitudeCallback
+  callback?: altitudeCallback,
 ) => void;
 
 type GSIType = {
@@ -228,23 +250,6 @@ type GSIType = {
   content?: LeafletClass & { execRefresh: funcRefresh };
 };
 
-/**
- * 位置から標高を求める
- * https://maps.gsi.go.jp/development/elevation.html
- * ・国土地理院の「標高を求めるプログラム(https://maps.gsi.go.jp/development/elevation.html)」を参考にしました
- * ・関数「getAltitude()」で指定した位置の標高をcallback関数で返します。
- * ■概略(国土地理院のサンプル解説から引用)
- * 　・入力した経緯度値から、その場所に該当する「標高タイル」（PNG形式）をクライアントにダウンロードしてきます。
- * 　・入力した経緯度値に該当する「標高タイル」のピクセルの画素値（RGB値）から、標高値が算出されます。
- * 　・「標高タイル」には、「DEM5A」、「DEM5B」、「DEM5C」、「DEM10B」、「DEMGM」の4種類があります（本サンプルプログラムでは「DEMGM」は使用していません）。
- * 　・標高タイルの精度は、「DEM5A」＞「DEM5B」＞「DEM5C」＞「DEM10B」＞「DEMGM」の順に高精度になります。
- * 　・「DEM5A」、「DEM5B」及び「DEM5C」は、日本全国の範囲でデータが整備されていません。
- * 　・そのため、本プログラムでは、まず「DEM5A」のデータを探して、なければ「DEM5B」、「DEM5B」もなければ「DEM5C」、最後に「DEM10B」を使用するという処理をしています。
- * 　・また、海部などデータが存在しないところのピクセル値は、(R,G,B)=(128,0,0)となっています。
- * 　・標高タイルの詳細仕様はこちらを参照してください。
-
- *
- */
 const GSI: GSIType = {
   Footer: Leaflet.Class.extend({
     initialize() {},
@@ -260,12 +265,12 @@ const GSI: GSIType = {
       lon: number,
       lat: number,
       zoom: number,
-      callback?: altitudeCallback
+      callback?: altitudeCallback,
     ) {
       if (!this._elevationLoader) {
         this._elevationLoader = new GSI.ElevationLoader();
         this._elevationLoader.on(
-          "load",
+          'load',
           Leaflet.bind((e) => {
             if (callback)
               if (e.h === undefined) {
@@ -274,7 +279,7 @@ const GSI: GSIType = {
                 const height = e.h.toFixed(e.fixed !== undefined ? e.fixed : 0);
                 callback(height, e);
               }
-          }, this)
+          }, this),
         );
       }
 
@@ -289,29 +294,29 @@ const GSI: GSIType = {
   ElevationLoader: Leaflet.Evented.extend({
     _demUrlList: [
       {
-        title: "DEM5A",
-        url: "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/{z}/{x}/{y}.png",
+        title: 'DEM5A',
+        url: 'https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/{z}/{x}/{y}.png',
         minzoom: 15,
         maxzoom: 15,
         fixed: 1,
       },
       {
-        title: "DEM5B",
-        url: "https://cyberjapandata.gsi.go.jp/xyz/dem5b_png/{z}/{x}/{y}.png",
+        title: 'DEM5B',
+        url: 'https://cyberjapandata.gsi.go.jp/xyz/dem5b_png/{z}/{x}/{y}.png',
         minzoom: 15,
         maxzoom: 15,
         fixed: 1,
       },
       {
-        title: "DEM5C",
-        url: "https://cyberjapandata.gsi.go.jp/xyz/dem5c_png/{z}/{x}/{y}.png",
+        title: 'DEM5C',
+        url: 'https://cyberjapandata.gsi.go.jp/xyz/dem5c_png/{z}/{x}/{y}.png',
         minzoom: 15,
         maxzoom: 15,
         fixed: 1,
       },
       {
-        title: "DEM10B",
-        url: "https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png",
+        title: 'DEM10B',
+        url: 'https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png',
         minzoom: 14,
         maxzoom: 14,
         fixed: 0,
@@ -364,8 +369,8 @@ const GSI: GSIType = {
 
     _destroyImage() {
       if (this._img) {
-        this._img.removeEventListener("load", this._imgLoadHandler);
-        this._img.removeEventListener("error", this._imgLoadErrorHandler);
+        this._img.removeEventListener('load', this._imgLoadHandler);
+        this._img.removeEventListener('error', this._imgLoadErrorHandler);
 
         this._imgLoadHandler = null;
         this._imgLoadErrorHandler = null;
@@ -386,7 +391,7 @@ const GSI: GSIType = {
 
       if (!this._current.urlList || this._current.urlList.length <= 0) {
         // not found
-        this.fire("load", {
+        this.fire('load', {
           h: undefined,
           pos: current.pos,
         });
@@ -398,10 +403,10 @@ const GSI: GSIType = {
       const tileInfo = this._getTileInfo(
         this._current.pos.lat,
         this._current.pos.lng,
-        url.zoom
+        url.zoom,
       );
-      this._img = document.createElement("img");
-      this._img.setAttribute("crossorigin", "anonymous");
+      this._img = document.createElement('img');
+      this._img.setAttribute('crossorigin', 'anonymous');
 
       this._imgLoadHandler = Leaflet.bind(
         this._onImgLoad,
@@ -409,7 +414,7 @@ const GSI: GSIType = {
         url,
         current,
         tileInfo,
-        this._img
+        this._img,
       );
       this._imgLoadErrorHandler = Leaflet.bind(
         this._onImgLoadError,
@@ -417,16 +422,16 @@ const GSI: GSIType = {
         url,
         current,
         tileInfo,
-        this._img
+        this._img,
       );
 
-      this._img.addEventListener("load", this._imgLoadHandler);
-      this._img.addEventListener("error", this._imgLoadErrorHandler);
+      this._img.addEventListener('load', this._imgLoadHandler);
+      this._img.addEventListener('error', this._imgLoadErrorHandler);
 
       const makeUrl = (url: any, tileInfo: any) => {
-        var result = url.url.replace("{x}", tileInfo.x);
-        result = result.replace("{y}", tileInfo.y);
-        result = result.replace("{z}", url.zoom);
+        var result = url.url.replace('{x}', tileInfo.x);
+        result = result.replace('{y}', tileInfo.y);
+        result = result.replace('{z}', url.zoom);
         return result;
       };
 
@@ -437,12 +442,12 @@ const GSI: GSIType = {
       if (current !== this._current) return;
 
       if (!this._canvas) {
-        this._canvas = document.createElement("canvas");
+        this._canvas = document.createElement('canvas');
         this._canvas.width = 256;
         this._canvas.height = 256;
       }
 
-      var ctx = this._canvas.getContext("2d");
+      var ctx = this._canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
 
       const imgData = ctx.getImageData(0, 0, 256, 256);
@@ -459,7 +464,7 @@ const GSI: GSIType = {
         else h *= 0.01;
         this._destroyImage();
 
-        this.fire("load", {
+        this.fire('load', {
           h: h,
           title: url.title,
           fixed: url.fixed,
@@ -510,7 +515,7 @@ GSI.content = new GSI.Footer();
 export const getAltitude = (
   lat: number,
   lon: number,
-  callback?: altitudeCallback
+  callback?: altitudeCallback,
 ) => {
   const initialz = 14;
   GSI.content?.execRefresh(lon, lat, initialz, callback);
@@ -518,24 +523,22 @@ export const getAltitude = (
 ```
 
 
+### ②-2位置表示エリア
 
+  ![img21](./img/img21.png)
 
-### ②-2情報表示エリア
+ * クリックした位置の「標高」「緯度」「経度」を表示するエリアです
+ * 右上に表示します
+ * propsで受け取った値を表示します
 
- * クリックした位置の「標高」「緯度」「経度」を表示するエリア
- * 右上に表示
- * propsで受け取った値を表示する
-
-画面の四隅にアイコンや表示領域を配置するために(@skyeer/react-leaflet-custom-control)[https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control]を利用します。
+画面の四隅にアイコンや表示領域を配置するために(react-leaflet-custom-control)[https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control]を利用します。
+positionプロパティで表示位置を指定し、内部は任意のタグを記載します。
 
 
 * インストール
 ```bash
 npm install @skyeer/react-leaflet-custom-control
 ```
-
-* 使い方
-  * positionで表示位置を指定。Control内部は任意に表示内容を記載します。
 
 
 src/AltitudeArea.tsx
@@ -546,7 +549,7 @@ import Control from 'react-leaflet-custom-control';
 import { AltitudeDetail } from './utils/altitude';
 
 /**
- * 情報表示エリア
+ * 位置表示エリア
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
  * ・propsで受け取った値を表示する
  */
@@ -571,13 +574,13 @@ export default AltitudeArea;
 ```
 
 ### ②-3位置表示アイコン
- * クリックした位置にアイコン表示する
- * 位置(経度、緯度)を元に標高を取得し、情報表示エリアを更新する(state経由)
+ * クリックした位置にアイコン表示します
+ * 位置(経度、緯度)を元に標高を取得し、位置表示エリアを更新します(state経由)
 
 src/LocationMarker.tsx
 
  ```tsx
-import { VFC, useState } from "react";
+import { VFC } from "react";
 import { LatLng } from "leaflet";
 import { Marker, Popup, useMapEvents } from "react-leaflet";
 import { getAltitude, AltitudeDetail } from "./utils/altitude";
@@ -590,13 +593,12 @@ type propType = {
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコン表示する
- * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
+ * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
  */
 const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
-  const [position, setPosition] = useState<LatLng | null>(null);
+  const position = new LatLng(pos.lat, pos.lng);
   useMapEvents({
     click(e) {
-      setPosition(e.latlng);
       const { lat, lng } = e.latlng;
       // クリックされた位置の標高を取得
       getAltitude(lat, lng, (alt, altDetail) => {
@@ -616,7 +618,7 @@ const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
 export default LocationMarker;
  ```
 
-* 位置表示エリアの大きさ、フォント、マージンを調整するため下記を追加する
+* 位置表示エリアの大きさ、フォント、マージンを調整するため下記を追加します
 
 src/App.css
 
@@ -631,9 +633,10 @@ src/App.css
 ```
 
 
-### ②-4マップ表示機能ソースを修正(情報表示、位置表示を追加)
- * 上記で作成した「情報エリア」「位置表示アイコン」を表示する
- * 位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+### ②-4マップ表示機能ソースを修正(位置表示エリア、位置表示アイコンを追加)
+ * 上記で作成した「位置表示エリア」「位置表示アイコン」を表示します
+ * 位置情報をstateで保持します
+ * 値を更新するためLocationMakerに更新メソッドを引き渡し、マップ上をクリックするタイミングで更新します
 
 src/App.tsx
 
@@ -681,15 +684,17 @@ npm run start
 
 ---
 
-## ③現在位置を地図の初期表示位置に設定する
+## ③初期表示位置を現在の位置に変更する
 
 ## ③-1現在位置を取得
 
-画面表示時に、現在位置を取得してマップを表示すると共に、標高も取得して表示します。
+画面表示時に、現在位置を取得してマップを表示すると共に、標高も取得して表示します
 
-* navigator.geolocation.getCurrentPosition()で現在位置を取得しstateを更新
-* 現在位置のマップを表示する(stateの位置を表示)
-* 標高を取得して表示(useEffectの依存変数により更新)
+* navigator.geolocation.getCurrentPosition()で現在位置を取得しstateを更新します
+* マップを現在位置に移動します(stateの位置を表示)
+* 標高を再表示します(useEffectの依存変数により更新)
+
+src/App.tsx
 
 ```tsx
 import { VFC, useState, useEffect } from "react";
@@ -742,14 +747,14 @@ const App: VFC = () => {
 export default App;
  ```
 
-## ③-2現在位置の更新に合わせて標高を再取得する
+## ③-2現在位置の更新に合わせて標高を再取得するように変更
 
-* useEffect()の依存変数を利用して、親から渡された位置が変わった場合、標高を再取得する
+* useEffect()の依存変数を利用して、親から渡された位置が変わった場合、標高を再取得します
 
 src/LocationMarker.tsx
 
 ```tsx
-import { VFC, useState, useEffect, useCallback } from 'react';
+import { VFC, useEffect, useCallback } from 'react';
 import { LatLng } from 'leaflet';
 import { Marker, Popup, useMapEvents } from 'react-leaflet';
 import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
@@ -762,15 +767,13 @@ type propType = {
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコン表示する
- * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
+ * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
  * ・親から渡された位置が変わった場合、標高を再取得する
  */
 const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   const { pos } = altitude;
   const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const [position, setPosition] = useState<LatLng | null>(
-    new LatLng(pos.lat, pos.lng),
-  );
+  const position = new LatLng(pos.lat, pos.lng);
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
@@ -787,7 +790,6 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
 
   // 親から渡された位置が変わった場合、標高を再取得
   useEffect(() => {
-    setPosition(new LatLng(pos.lat, pos.lng));
     getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
       if (altDetail) {
         callback(altDetail);
@@ -803,7 +805,6 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
 };
 
 export default LocationMarker;
-
 ```
 
 ## ④GPSアイコンを追加して現在位置に戻せるようにする
@@ -812,12 +813,12 @@ export default LocationMarker;
 
 ### ①-1GPSアイコンの作成
 
-GPSアイコンを利用するため[React Icons](https://react-icons.github.io/react-icons/)をインストールします。[React Icons](https://react-icons.github.io/react-icons/)で検索して一番それっぽいい`BiCurrentLocation`を使ってみます。
+GPSアイコンを利用するため[React Icons](https://react-icons.github.io/react-icons/)をインストールします。[React Icons](https://react-icons.github.io/react-icons/)の中からイメージに近い`BiCurrentLocation`を使います
 
 ![img30](./img/img30.png)
 
-* アイコン(BiCurrentLocation)を読み込む
-* クリック時に現在位置の取得してマップを移動するとともに、標高の再表示を行う
+* アイコン(BiCurrentLocation)を読み込みます
+* クリック時に現在位置の取得してマップを移動するとともに、標高の再表示を行います
 
 src/GPS.tsx
 
@@ -867,7 +868,8 @@ export default GPS;
 
 ### ④-2GPSアイコンを表示する
 
-* `<MapContainer>`タグ内に`<GPS>`を追加する
+* `<MapContainer>`タグ内に`<GPS>`を追加します
+* 縮尺を表示するため`<ScaleControl />`も追加します
 
 
 ```tsx
@@ -923,5 +925,8 @@ const App: VFC = () => {
   }
 };
 export default App;
-
 ```
+
+以上です。
+
+今後、マップの切り替えや、複数マップのオーバーレイもやってみようと考えています。

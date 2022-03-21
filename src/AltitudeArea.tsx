@@ -3,7 +3,7 @@ import Control from 'react-leaflet-custom-control';
 import { AltitudeDetail } from './utils/altitude';
 
 /**
- * 情報表示エリア
+ * 位置表示エリア
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
  * ・propsで受け取った値を表示する
  */
