@@ -1,6 +1,6 @@
 import { VFC, useState, useEffect } from 'react';
 import { LatLng } from 'leaflet';
-import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
+import { ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
 import { AltitudeDetail } from './utils/altitude';
 import LayredMap from './LayeredMap';

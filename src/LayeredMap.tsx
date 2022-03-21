@@ -1,18 +1,7 @@
-import { FC, useState, useEffect } from 'react';
+import { FC } from 'react';
 import { LatLngExpression } from 'leaflet';
-import {
-  MapContainer,
-  TileLayer,
-  LayersControl,
-  Marker,
-  Popup,
-  LayerGroup,
-  Circle,
-  FeatureGroup,
-  Rectangle,
-} from 'react-leaflet';
+import { MapContainer, TileLayer, LayersControl } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
-import { AltitudeDetail } from './utils/altitude';
 
 type propType = {
   center: LatLngExpression;
