@@ -1,6 +1,6 @@
-# React-Leafletで標高表示機能付きマップを作る
+# React-Leafletで作る標高表示機能付きマップ
 
-サンプルページ：
+動作確認ページ：
 https://murasuke.github.io/leaflet-altitude-map/
 
 ソース：
@@ -71,6 +71,11 @@ $ cd leaflet-altitude-map
 $ npm i leaflet react-leaflet
 $ npm i -D @types/leaflet
 ```
+
+* 完成後は下記のような構成になります
+
+![img00](./img/img00.png)
+
 
 ## ①[React Leaflet](https://react-leaflet.js.org/)を利用して最低限の地図アプリを作成する
 
@@ -536,7 +541,7 @@ export const getAltitude = (
  * 右上に表示します
  * propsで受け取った値を表示します
 
-画面の四隅にアイコンや表示領域を配置するために(react-leaflet-custom-control)[https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control]を利用します。
+画面の四隅にアイコンや表示領域を配置するために[react-leaflet-custom-control](https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control)を利用します。
 positionプロパティで表示位置を指定し、内部は任意のタグを記載します。
 
 
