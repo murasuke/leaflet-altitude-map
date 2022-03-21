@@ -3,6 +3,7 @@ import { LatLng } from 'leaflet';
 import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
 import { AltitudeDetail } from './utils/altitude';
+import LayredMap from './LayeredMap';
 import AltitudeArea from './AltitudeArea';
 import LocationMarker from './LocationMarker';
 import GPS from './GPS';
@@ -36,23 +37,12 @@ const App: VFC = () => {
     return <></>;
   } else {
     return (
-      <MapContainer center={altitude.pos} zoom={14}>
-        <TileLayer
-          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
-          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
-        />
-
-        {/* <TileLayer
-          attribution='&copy; <a href="https://www.j-shis.bosai.go.jp/landslidemap">防災科研</a>'
-          url="https://jmapweb3v.bosai.go.jp/map/xyz/landslide/{z}/{x}/{y}.png"
-          opacity={0.4}
-        /> */}
-
+      <LayredMap center={altitude.pos}>
         <AltitudeArea altitude={altitude} />
         <LocationMarker altitude={altitude} setAltitude={setAltitude} />
         <GPS setAltitude={setAltitude} />
         <ScaleControl />
-      </MapContainer>
+      </LayredMap>
     );
   }
 };
