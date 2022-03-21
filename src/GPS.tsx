@@ -10,9 +10,10 @@ type propType = {
 };
 
 const GPS: VFC<propType> = ({ setAltitude }) => {
-  const size = '30px';
+  const iconSize = '30px';
   const map = useMap();
 
+  // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
   const onclick = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
@@ -28,9 +29,9 @@ const GPS: VFC<propType> = ({ setAltitude }) => {
   return (
     <Control
       position="topleft"
-      style={{ backgroundColor: '#FFF', height: size }}
+      style={{ backgroundColor: '#FFF', height: iconSize }}
     >
-      <BiCurrentLocation size={size} onClick={() => onclick()} />
+      <BiCurrentLocation size={iconSize} onClick={() => onclick()} />
     </Control>
   );
 };

@@ -31,7 +31,7 @@ https://murasuke.github.io/leaflet-altitude-map/
   * ①最低限の地図アプリを作成する
   * ②クリックした場所の標高を表示する機能を追加する
   * ③現在位置を地図の初期表示位置にする
-  * ④GPSボタンを追加して現在位置に戻せるようにする
+  * ④GPSアイコンを追加して現在位置に戻せるようにする
 
 
 ---
@@ -598,7 +598,7 @@ const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
     click(e) {
       setPosition(e.latlng);
       const { lat, lng } = e.latlng;
-      // 標高を取得
+      // クリックされた位置の標高を取得
       getAltitude(lat, lng, (alt, altDetail) => {
         console.log(alt + "m");
         setAltitude(altDetail);
@@ -681,9 +681,15 @@ npm run start
 
 ---
 
-## ③現在位置を地図の初期表示位置にする
+## ③現在位置を地図の初期表示位置に設定する
 
-* navigator.geolocation.getCurrentPosition()で現在位置を取得して表示
+## ③-1現在位置を取得
+
+画面表示時に、現在位置を取得してマップを表示すると共に、標高も取得して表示します。
+
+* navigator.geolocation.getCurrentPosition()で現在位置を取得しstateを更新
+* 現在位置のマップを表示する(stateの位置を表示)
+* 標高を取得して表示(useEffectの依存変数により更新)
 
 ```tsx
 import { VFC, useState, useEffect } from "react";
@@ -700,6 +706,7 @@ import "./App.css";
  * 地図表示
  * ・上記で作成した「情報エリア」「位置表示アイコン」を表示する
  * ・位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+ * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
   const [altitude, setAltitude] = useState<AltitudeDetail>();
@@ -735,5 +742,186 @@ const App: VFC = () => {
 export default App;
  ```
 
-## ④GPSボタンを追加して現在位置に戻せるようにする
+## ③-2現在位置の更新に合わせて標高を再取得する
 
+* useEffect()の依存変数を利用して、親から渡された位置が変わった場合、標高を再取得する
+
+src/LocationMarker.tsx
+
+```tsx
+import { VFC, useState, useEffect, useCallback } from 'react';
+import { LatLng } from 'leaflet';
+import { Marker, Popup, useMapEvents } from 'react-leaflet';
+import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
+
+type propType = {
+  altitude: AltitudeDetail;
+  setAltitude: setAltState;
+};
+
+/**
+ * 位置表示アイコン
+ * ・クリックした位置にアイコン表示する
+ * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
+ * ・親から渡された位置が変わった場合、標高を再取得する
+ */
+const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
+  const { pos } = altitude;
+  const callback = useCallback((e) => setAltitude(e), [setAltitude]);
+  const [position, setPosition] = useState<LatLng | null>(
+    new LatLng(pos.lat, pos.lng),
+  );
+  useMapEvents({
+    click(e) {
+      const { lat, lng } = e.latlng;
+      // クリックされた位置の標高を取得
+      getAltitude(lat, lng, (alt, altDetail) => {
+        console.log(`標高:${alt}m`);
+        console.log(`緯度:${pos.lat} 経度:${pos.lng}`);
+        if (altDetail) {
+          setAltitude(altDetail);
+        }
+      });
+    },
+  });
+
+  // 親から渡された位置が変わった場合、標高を再取得
+  useEffect(() => {
+    setPosition(new LatLng(pos.lat, pos.lng));
+    getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
+      if (altDetail) {
+        callback(altDetail);
+      }
+    });
+  }, [pos.lat, pos.lng, callback]);
+
+  return position === null ? null : (
+    <Marker position={position}>
+      <Popup>{`Alt(${(altitude?.h ?? 0).toFixed(1) + 'm'}) ${position}`}</Popup>
+    </Marker>
+  );
+};
+
+export default LocationMarker;
+
+```
+
+## ④GPSアイコンを追加して現在位置に戻せるようにする
+
+![img40](./img/img40.png)
+
+### ①-1GPSアイコンの作成
+
+GPSアイコンを利用するため[React Icons](https://react-icons.github.io/react-icons/)をインストールします。[React Icons](https://react-icons.github.io/react-icons/)で検索して一番それっぽいい`BiCurrentLocation`を使ってみます。
+
+![img30](./img/img30.png)
+
+* アイコン(BiCurrentLocation)を読み込む
+* クリック時に現在位置の取得してマップを移動するとともに、標高の再表示を行う
+
+src/GPS.tsx
+
+```tsx
+
+import { VFC } from 'react';
+import { useMap } from 'react-leaflet';
+import Control from 'react-leaflet-custom-control';
+import { BiCurrentLocation } from 'react-icons/bi';
+
+import { setAltState, getAltitude } from './utils/altitude';
+
+type propType = {
+  setAltitude: setAltState;
+};
+
+const GPS: VFC<propType> = ({ setAltitude }) => {
+  const iconSize = '30px';
+  const map = useMap();
+
+  // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
+  const onclick = () => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+      map.flyTo([latitude, longitude], map.getZoom());
+      getAltitude(latitude, longitude, (alt, altDetail) => {
+        if (altDetail) {
+          setAltitude(altDetail);
+        }
+      });
+    });
+  };
+
+  return (
+    <Control
+      position="topleft"
+      style={{ backgroundColor: '#FFF', height: iconSize }}
+    >
+      <BiCurrentLocation size={iconSize} onClick={() => onclick()} />
+    </Control>
+  );
+};
+
+export default GPS;
+```
+
+
+### ④-2GPSアイコンを表示する
+
+* `<MapContainer>`タグ内に`<GPS>`を追加する
+
+
+```tsx
+import { VFC, useState, useEffect } from 'react';
+import { LatLng } from 'leaflet';
+import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
+import './utils/initLeaflet';
+import { AltitudeDetail } from './utils/altitude';
+import AltitudeArea from './AltitudeArea';
+import LocationMarker from './LocationMarker';
+import GPS from './GPS';
+
+import 'leaflet/dist/leaflet.css';
+import './App.css';
+
+/**
+ * 地図表示
+ * ・上記で作成した「情報エリア」「位置表示アイコン」を表示する
+ * ・位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+ * ・初期表示時、現在位置を取得してstateを更新する
+ */
+const App: VFC = () => {
+  const [altitude, setAltitude] = useState<AltitudeDetail>();
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((e) => {
+      const position = new LatLng(e.coords.latitude, e.coords.longitude);
+      setAltitude({
+        fixed: 0,
+        h: 0,
+        pos: { ...position, zoom: 14 },
+        title: '',
+        type: '',
+      });
+    });
+  }, []);
+
+  if (!altitude) {
+    return <></>;
+  } else {
+    return (
+      <MapContainer center={altitude.pos} zoom={14}>
+        <TileLayer
+          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+        />
+        <AltitudeArea altitude={altitude} />
+        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
+        <GPS setAltitude={setAltitude} />
+        <ScaleControl />
+      </MapContainer>
+    );
+  }
+};
+export default App;
+
+```

@@ -1,7 +1,6 @@
 import { VFC, useState, useEffect } from 'react';
 import { LatLng } from 'leaflet';
 import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
-import Control from 'react-leaflet-custom-control';
 import './utils/initLeaflet';
 import { AltitudeDetail } from './utils/altitude';
 import AltitudeArea from './AltitudeArea';
@@ -14,7 +13,8 @@ import './App.css';
 /**
  * 地図表示
  * ・上記で作成した「情報エリア」「位置表示アイコン」を表示する
- * ・位置情報をstateで保持する
+ * ・位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+ * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
   const [altitude, setAltitude] = useState<AltitudeDetail>();

@@ -12,6 +12,7 @@ type propType = {
  * 位置表示アイコン
  * ・クリックした位置にアイコン表示する
  * ・位置から標高を取得し、情報表示エリアに引き渡す(state経由)
+ * ・親から渡された位置が変わった場合、標高を再取得する
  */
 const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   const { pos } = altitude;
@@ -22,7 +23,7 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
-      // 標高を取得
+      // クリックされた位置の標高を取得
       getAltitude(lat, lng, (alt, altDetail) => {
         console.log(`標高:${alt}m`);
         console.log(`緯度:${pos.lat} 経度:${pos.lng}`);
@@ -33,6 +34,7 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
     },
   });
 
+  // 親から渡された位置が変わった場合、標高を再取得
   useEffect(() => {
     setPosition(new LatLng(pos.lat, pos.lng));
     getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
