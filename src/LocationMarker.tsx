@@ -39,8 +39,8 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
       },
       dragend() {
         const marker = markerRef.current;
-        marker.setOpacity(1);
         if (marker != null) {
+          marker.setOpacity(1);
           setPosition(marker.getLatLng());
           popRef.current.openOn(map);
         }
@@ -77,7 +77,7 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
         callback(altDetail);
       }
     });
-  }, [pos, callback]);
+  }, [pos.lat, pos.lng, callback]);
 
   return position === null ? null : (
     <>
