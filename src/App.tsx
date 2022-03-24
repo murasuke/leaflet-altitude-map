@@ -44,7 +44,7 @@ const App: VFC = () => {
         <LocationMarker altitude={altitude} setAltitude={setAltitude} />
         <GPS setAltitude={setAltitude} />
         <RecordPosition setPosArray={setPosArray} />
-        <Polyline positions={posArray} />
+        <Polyline color="red" positions={posArray} />
         <ScaleControl />
       </LayredMap>
     );

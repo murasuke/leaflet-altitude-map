@@ -1,7 +1,12 @@
-import { VFC, useEffect, useCallback } from 'react';
-import { LatLng } from 'leaflet';
-import { Marker, Popup, useMapEvents } from 'react-leaflet';
-import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
+import { VFC, useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import {
+  getAltitude,
+  AltitudeDetail,
+  setAltState,
+  Position,
+} from './utils/altitude';
+import { distance } from './utils/distance';
 
 type propType = {
   altitude: AltitudeDetail;
@@ -17,7 +22,39 @@ type propType = {
 const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   const { pos } = altitude;
   const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const position = new LatLng(pos.lat, pos.lng);
+  const [position, setPosition] = useState(pos);
+  const [polyline, setPolyline] = useState<Position[]>([pos]);
+
+  const markerRef = useRef<any>(null);
+  const lineRef = useRef<any>(null);
+  const popRef = useRef<any>(null);
+  const map = useMap();
+
+  const eventHandlers = useMemo(
+    () => ({
+      dragstart: () => {
+        const marker = markerRef.current;
+        marker.setOpacity(0.6);
+        setPolyline([marker.getLatLng()]);
+      },
+      dragend() {
+        const marker = markerRef.current;
+        marker.setOpacity(1);
+        if (marker != null) {
+          setPosition(marker.getLatLng());
+          popRef.current.openOn(map);
+        }
+      },
+      drag() {
+        const marker = markerRef.current;
+        setPolyline((ary) => {
+          return [ary[0], marker.getLatLng()];
+        });
+      },
+    }),
+    [],
+  );
+
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
@@ -34,17 +71,35 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
 
   // 親から渡された位置が変わった場合、標高を再取得
   useEffect(() => {
+    setPosition(pos);
     getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
       if (altDetail) {
         callback(altDetail);
       }
     });
-  }, [pos.lat, pos.lng, callback]);
+  }, [pos, callback]);
 
   return position === null ? null : (
-    <Marker position={position}>
-      <Popup>{`Alt(${(altitude?.h ?? 0).toFixed(1) + 'm'}) ${position}`}</Popup>
-    </Marker>
+    <>
+      <Marker
+        draggable={true}
+        eventHandlers={eventHandlers}
+        position={position}
+        ref={markerRef}
+      >
+        <Popup ref={popRef}>
+          {polyline.length > 1
+            ? `${distance(
+                polyline[0].lat,
+                polyline[0].lng,
+                polyline[1].lat,
+                polyline[1].lng,
+              ).toFixed(5)} km`
+            : ''}
+        </Popup>
+      </Marker>
+      {polyline ? <Polyline positions={polyline} ref={lineRef} /> : null}
+    </>
   );
 };
 
