@@ -29,3 +29,13 @@ export function distance(
     )
   );
 }
+
+export const polylineDistance = (polyLine: { lat: number; lng: number }[]) => {
+  let total = 0;
+  for (let i = 1; i < polyLine.length; i++) {
+    const { lat: lat1, lng: lng1 } = polyLine[i - 1];
+    const { lat: lat2, lng: lng2 } = polyLine[i];
+    total += distance(lat1, lng1, lat2, lng2);
+  }
+  return total;
+};

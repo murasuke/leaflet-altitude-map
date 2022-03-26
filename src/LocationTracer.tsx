@@ -1,15 +1,19 @@
-import { VFC, useState, useRef } from 'react';
-import { useMap, Polyline } from 'react-leaflet';
+import { VFC, useState, useRef, useEffect } from 'react';
+import { Popup as LeafletPopup } from 'leaflet';
+import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BsRecordCircle } from 'react-icons/bs';
-import { distance } from './utils/distance';
+import { distance, polylineDistance } from './utils/distance';
 
 const PositionTracer: VFC = () => {
   const iconSize = '30px';
   const [recordPosArray, setRecordPosArray] = useState<[number, number][]>([]);
-  const [redording, setRecording] = useState(false);
+  const [recording, setRecording] = useState(false);
   const map = useMap();
   const timerId = useRef<NodeJS.Timer | number>(null!);
+
+  const markerRef = useRef<any>(null);
+  const popRef = useRef<LeafletPopup>(null);
 
   const recordPosition = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -24,6 +28,10 @@ const PositionTracer: VFC = () => {
           }
         }
         map.flyTo([latitude, longitude]);
+        if (ary.length > 1) {
+          popRef.current?.openOn(map);
+        }
+        // popRef.current?.openOn(map);
         return [...ary, [latitude, longitude]];
       });
     });
@@ -31,16 +39,23 @@ const PositionTracer: VFC = () => {
 
   // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
   const onclick = () => {
-    if (!redording) {
-      //setPosArray([]);
+    if (!recording) {
       recordPosition();
+      markerRef.current.setOpacity(1);
       timerId.current = setInterval(recordPosition, 3000);
     } else {
       clearInterval(timerId.current as NodeJS.Timer);
+      markerRef.current.setOpacity(0);
       timerId.current = 0;
     }
-    setRecording(!redording);
+    setRecording(!recording);
   };
+
+  useEffect(() => {
+    // .tracer-marker { filter: hue-rotate(120deg) }
+    markerRef.current.getElement().classList.add('tracer-marker');
+    markerRef.current.setOpacity(0);
+  }, []);
 
   return (
     <>
@@ -54,7 +69,24 @@ const PositionTracer: VFC = () => {
           onClick={() => onclick()}
         />
       </Control>
+
       <Polyline color="red" positions={recordPosArray} />
+
+      <Marker
+        draggable={false}
+        position={
+          recordPosArray.length ? recordPosArray.slice(-1)[0] : [35, 136]
+        }
+        ref={markerRef}
+      >
+        <Popup ref={popRef}>
+          {polylineDistance(
+            recordPosArray.map((item) => {
+              return { lat: item[0], lng: item[1] };
+            }),
+          ).toFixed(3) + 'km'}
+        </Popup>
+      </Marker>
     </>
   );
 };

@@ -1,11 +1,11 @@
 import { VFC, useState, useEffect } from 'react';
-import { LatLng } from 'leaflet';
+import { LatLng, LatLngLiteral } from 'leaflet';
 import { ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
-import { AltitudeDetail } from './utils/altitude';
+
 import LayredMap from './LayeredMap';
-import LocationIndicator from './LocationIndicator';
 import LocationMarker from './LocationMarker';
+import LocationDispArea from './LocationDispArea';
 import GPS from './GPS';
 import LocationTracer from './LocationTracer';
 
@@ -19,29 +19,23 @@ import './App.css';
  * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
-  const [altitude, setAltitude] = useState<AltitudeDetail>();
+  const [location, setLocation] = useState<LatLngLiteral>();
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
       const position = new LatLng(e.coords.latitude, e.coords.longitude);
-      setAltitude({
-        fixed: 0,
-        h: 0,
-        pos: { ...position, zoom: 14 },
-        title: '',
-        type: '',
-      });
+      setLocation(position);
     });
   }, []);
 
-  if (!altitude) {
+  if (!location) {
     return <></>;
   } else {
     return (
-      <LayredMap center={altitude.pos}>
-        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
-        <LocationIndicator altitude={altitude} />
-        <GPS setAltitude={setAltitude} />
+      <LayredMap center={location}>
+        <LocationMarker location={location} setLocation={setLocation} />
+        <LocationDispArea location={location} />
+        <GPS setLocation={setLocation} />
         <LocationTracer />
         <ScaleControl />
       </LayredMap>

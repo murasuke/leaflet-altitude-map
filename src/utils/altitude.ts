@@ -14,11 +14,12 @@
  * 　・標高タイルの詳細仕様はこちらを参照してください。
  */
 
-import Leaflet from 'leaflet';
+import Leaflet, { LatLngLiteral } from 'leaflet';
 
-export type setAltState = React.Dispatch<
-  React.SetStateAction<AltitudeDetail | undefined>
+export type setLocationState = React.Dispatch<
+  React.SetStateAction<LatLngLiteral | undefined>
 >;
+
 type LeafletClass = (new (...args: any[]) => any) & typeof Leaflet.Class;
 
 type UrlInfo = {

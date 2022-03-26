@@ -3,26 +3,22 @@ import { useMap } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BiCurrentLocation } from 'react-icons/bi';
 
-import { setAltState, getAltitude } from './utils/altitude';
+import { setLocationState } from './utils/altitude';
 
 type propType = {
-  setAltitude: setAltState;
+  setLocation: setLocationState;
 };
 
-const GPS: VFC<propType> = ({ setAltitude }) => {
+const GPS: VFC<propType> = ({ setLocation }) => {
   const iconSize = '30px';
   const map = useMap();
 
-  // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
+  // 現在位置を取得してマップを移動する
   const onclick = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
       map.flyTo([latitude, longitude], 14);
-      getAltitude(latitude, longitude, (alt, altDetail) => {
-        if (altDetail) {
-          setAltitude(altDetail);
-        }
-      });
+      setLocation({ lat: latitude, lng: longitude });
     });
   };
 

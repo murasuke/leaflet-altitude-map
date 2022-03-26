@@ -23,3 +23,7 @@ body {
   user-select:none;
 }
 
+.tracer-marker{
+  filter: hue-rotate(120deg)
+}
+

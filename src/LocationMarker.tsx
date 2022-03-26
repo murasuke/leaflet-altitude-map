@@ -1,12 +1,12 @@
-import { VFC, useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { VFC, useCallback, useState, useRef, useMemo } from 'react';
 import { Marker as LeafletMarker, LatLngLiteral } from 'leaflet';
 import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
-import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
-import { distance } from './utils/distance';
+import { setLocationState } from './utils/altitude';
+import { polylineDistance } from './utils/distance';
 
 type propType = {
-  altitude: AltitudeDetail;
-  setAltitude: setAltState;
+  location: LatLngLiteral;
+  setLocation: setLocationState;
 };
 
 /**
@@ -15,11 +15,9 @@ type propType = {
  * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
  * ・親から渡された位置が変わった場合、標高を再取得する
  */
-const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
-  const { pos } = altitude;
-  const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const [position, setPosition] = useState<LatLngLiteral>(pos);
-  const [polyline, setPolyline] = useState<LatLngLiteral[]>([pos]);
+const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
+  const setLocationCB = useCallback((e) => setLocation(e), [setLocation]);
+  const [polyline, setPolyline] = useState<LatLngLiteral[]>([location]);
 
   const markerRef = useRef<any>(null);
   const popRef = useRef<any>(null);
@@ -42,12 +40,13 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
           return [marker.getLatLng()];
         });
       },
-      dragend() {
+      dragend: () => {
         const marker = markerRef.current as LeafletMarker;
         marker.setOpacity(1);
         popRef.current.openOn(map);
+        setLocationCB(marker.getLatLng());
       },
-      drag() {
+      drag: () => {
         const marker = markerRef.current as LeafletMarker;
         popRef.current.openOn(map);
         setPolyline((ary) =>
@@ -57,49 +56,21 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
         );
       },
     }),
-    [map],
+    [map, setLocationCB],
   );
 
   useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      // クリックされた位置の標高を取得
-      getAltitude(lat, lng, (alt, altDetail) => {
-        console.log(`標高:${alt}m`);
-        console.log(`緯度:${pos.lat} 経度:${pos.lng}`);
-        if (altDetail) {
-          setAltitude(altDetail);
-        }
-      });
+    click: (e) => {
+      setLocation(e.latlng);
     },
   });
 
-  // 親から渡された位置が変わった場合、標高を再取得
-  useEffect(() => {
-    setPosition(pos);
-    getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
-      if (altDetail) {
-        callback(altDetail);
-      }
-    });
-  }, [pos.lat, pos.lng, callback]);
-
-  const polylineDistance = (polyLine: LatLngLiteral[]) => {
-    let total = 0;
-    for (let i = 1; i < polyLine.length; i++) {
-      const { lat: lat1, lng: lng1 } = polyLine[i - 1];
-      const { lat: lat2, lng: lng2 } = polyLine[i];
-      total += distance(lat1, lng1, lat2, lng2);
-    }
-    return total;
-  };
-
-  return position === null ? null : (
+  return location === null ? null : (
     <>
       <Marker
         draggable={true}
         eventHandlers={eventHandlers}
-        position={position}
+        position={location}
         ref={markerRef}
       >
         <Popup ref={popRef}>
