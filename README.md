@@ -38,6 +38,9 @@ https://github.com/murasuke/leaflet-altitude-map
   * ②クリックした場所の標高を表示する機能を追加する
   * ③初期表示位置を現在の位置に変更する
   * ④GPSアイコンを追加して現在位置に戻せるようにする
+  * ⑤マップの切り替えとオーバーレイ
+  * ⑥マーカーをドラッグして距離を計測する
+  * ⑦タイマーで位置を記録し、移動距離を表示する
 
 
 ---
@@ -101,6 +104,7 @@ let DefaultIcon = Leaflet.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
   iconAnchor: [12, 41], // アイコンのとがった位置をクリックした場所に合わせるためのオフセット
+  popupAnchor: [0, -32], // ポップアップの位置も合わせて調整
 });
 Leaflet.Marker.prototype.options.icon = DefaultIcon;
 
@@ -159,7 +163,7 @@ App.css
   height: 100vh;
 }
 
-/* カーソルを標準に戻す(標準の手アイコンは位置を正確に選択しづらい) */
+/* カーソルを標準に戻す(標準の手アイコンは正確に位置指定ができない) */
 .leaflet-grab {cursor: auto;}
 ```
 
@@ -551,36 +555,47 @@ npm install @skyeer/react-leaflet-custom-control
 ```
 
 
-src/AltitudeArea.tsx
+src/LocationDispArea.tsx
 
 ```tsx
-import { VFC } from 'react';
+import { VFC, useEffect, useState } from 'react';
+import { LatLngLiteral } from 'leaflet';
+
 import Control from 'react-leaflet-custom-control';
-import { AltitudeDetail } from './utils/altitude';
+import { getAltitude, AltitudeDetail } from './utils/altitude';
 
 /**
  * 位置表示エリア
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
- * ・propsで受け取った値を表示する
+ * ・propsで位置を受け取り、位置から「標高」を求めて表示する
  */
-const AltitudeArea: VFC<{ altitude?: AltitudeDetail }> = ({ altitude }) => {
-  const f = (num: number, fixed = 7) =>
+const LocationIndicator: VFC<{ location: LatLngLiteral }> = ({ location }) => {
+  const f = (num: number, fixed = 6) =>
     ('             ' + num.toFixed(fixed)).slice(-6 - fixed);
   const formatAlt = (alt: AltitudeDetail) =>
     `標高:${f(alt.h ?? 0, alt.fixed)}m\n緯度:${f(alt.pos.lat)}\n経度:${f(
       alt.pos.lng,
     )}`;
 
+  const [altitude, setAlt] = useState<AltitudeDetail>();
+
+  // 位置から標高を取得する
+  useEffect(() => {
+    getAltitude(location.lat, location.lng, (height, detail) => {
+      setAlt(detail);
+    });
+  }, [location]);
+
   return (
     <Control position="topright">
-      <div style={{ width: '200px', backgroundColor: 'Lavender' }}>
+      <div style={{ backgroundColor: 'Lavender' }}>
         <pre className="coords">{altitude ? formatAlt(altitude) : ''}</pre>
       </div>
     </Control>
   );
 };
 
-export default AltitudeArea;
+export default LocationIndicator;
 ```
 
 ### ②-3位置表示アイコン
@@ -597,7 +612,7 @@ import { getAltitude, AltitudeDetail } from "./utils/altitude";
 
 type propType = {
   altitude?: AltitudeDetail;
-  setAltitude: React.Dispatch<React.SetStateAction<AltitudeDetail | undefined>>;
+  setAltitude: React.Dispatch<React.SetStateAction<LatLngLiteral | undefined>>;
 };
 
 /**

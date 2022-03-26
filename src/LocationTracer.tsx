@@ -1,25 +1,27 @@
 import { VFC, useState, useRef, useEffect } from 'react';
-import { Popup as LeafletPopup } from 'leaflet';
+import { Popup as PopupRef, Marker as MarkerRef } from 'leaflet';
 import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BsRecordCircle } from 'react-icons/bs';
+import NoSleep from 'nosleep.js';
 import { distance, polylineDistance } from './utils/distance';
 
 const PositionTracer: VFC = () => {
   const iconSize = '30px';
-  const [recordPosArray, setRecordPosArray] = useState<[number, number][]>([]);
+  const [locationLog, setLocationLog] = useState<[number, number][]>([]);
   const [recording, setRecording] = useState(false);
+  const noSleepRef = useRef<NoSleep>(new NoSleep());
   const map = useMap();
   const timerId = useRef<NodeJS.Timer | number>(null!);
 
-  const markerRef = useRef<any>(null);
-  const popRef = useRef<LeafletPopup>(null);
+  const markerRef = useRef<MarkerRef>(null);
+  const popRef = useRef<PopupRef>(null);
 
   const recordPosition = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
 
-      setRecordPosArray((ary) => {
+      setLocationLog((ary) => {
         if (ary.length > 0) {
           const [lastLat, lastLng] = ary.slice(-1)[0];
           if (distance(lastLat, lastLng, latitude, longitude) < 5 / 1000) {
@@ -41,20 +43,22 @@ const PositionTracer: VFC = () => {
   const onclick = () => {
     if (!recording) {
       recordPosition();
-      markerRef.current.setOpacity(1);
+      markerRef.current?.setOpacity(1);
       timerId.current = setInterval(recordPosition, 3000);
+      noSleepRef.current.enable();
     } else {
       clearInterval(timerId.current as NodeJS.Timer);
-      markerRef.current.setOpacity(0);
+      markerRef.current?.setOpacity(0);
       timerId.current = 0;
+      noSleepRef.current.disable();
     }
     setRecording(!recording);
   };
 
   useEffect(() => {
     // .tracer-marker { filter: hue-rotate(120deg) }
-    markerRef.current.getElement().classList.add('tracer-marker');
-    markerRef.current.setOpacity(0);
+    markerRef.current?.getElement()?.classList.add('tracer-marker');
+    markerRef.current?.setOpacity(0);
   }, []);
 
   return (
@@ -70,18 +74,15 @@ const PositionTracer: VFC = () => {
         />
       </Control>
 
-      <Polyline color="red" positions={recordPosArray} />
+      <Polyline color="red" positions={locationLog} />
 
       <Marker
-        draggable={false}
-        position={
-          recordPosArray.length ? recordPosArray.slice(-1)[0] : [35, 136]
-        }
+        position={locationLog.length ? locationLog.slice(-1)[0] : [0, 0]}
         ref={markerRef}
       >
         <Popup ref={popRef}>
           {polylineDistance(
-            recordPosArray.map((item) => {
+            locationLog.map((item) => {
               return { lat: item[0], lng: item[1] };
             }),
           ).toFixed(3) + 'km'}

@@ -1,5 +1,5 @@
 import { VFC, useState, useEffect } from 'react';
-import { LatLng, LatLngLiteral } from 'leaflet';
+import { LatLngLiteral } from 'leaflet';
 import { ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
 
@@ -23,23 +23,19 @@ const App: VFC = () => {
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
-      const position = new LatLng(e.coords.latitude, e.coords.longitude);
-      setLocation(position);
+      const { latitude: lat, longitude: lng } = e.coords;
+      setLocation({ lat, lng });
     });
   }, []);
 
-  if (!location) {
-    return <></>;
-  } else {
-    return (
-      <LayredMap center={location}>
-        <LocationMarker location={location} setLocation={setLocation} />
-        <LocationDispArea location={location} />
-        <GPS setLocation={setLocation} />
-        <LocationTracer />
-        <ScaleControl />
-      </LayredMap>
-    );
-  }
+  return !location ? null : (
+    <LayredMap center={location}>
+      <LocationMarker location={location} setLocation={setLocation} />
+      <LocationDispArea location={location} />
+      <GPS setLocation={setLocation} />
+      <LocationTracer />
+      <ScaleControl />
+    </LayredMap>
+  );
 };
 export default App;

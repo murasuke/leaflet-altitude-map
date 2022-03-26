@@ -1,5 +1,5 @@
-import { VFC, useCallback, useState, useRef, useMemo } from 'react';
-import { Marker as LeafletMarker, LatLngLiteral } from 'leaflet';
+import { VFC, useState, useRef, useMemo } from 'react';
+import { Marker as MarkerRef, Popup as PopupRef, LatLngLiteral } from 'leaflet';
 import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import { setLocationState } from './utils/altitude';
 import { polylineDistance } from './utils/distance';
@@ -16,17 +16,18 @@ type propType = {
  * ・親から渡された位置が変わった場合、標高を再取得する
  */
 const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
-  const setLocationCB = useCallback((e) => setLocation(e), [setLocation]);
   const [polyline, setPolyline] = useState<LatLngLiteral[]>([location]);
 
-  const markerRef = useRef<any>(null);
-  const popRef = useRef<any>(null);
+  const markerRef = useRef<MarkerRef>(null);
+  const popRef = useRef<PopupRef>(null);
   const map = useMap();
+
+  const dragEndTime = useRef<number>(0);
 
   const eventHandlers = useMemo(
     () => ({
       dragstart: () => {
-        const marker = markerRef.current as LeafletMarker;
+        const marker = markerRef.current as MarkerRef;
         marker.setOpacity(0.6);
 
         const { lat, lng } = marker.getLatLng();
@@ -41,14 +42,15 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
         });
       },
       dragend: () => {
-        const marker = markerRef.current as LeafletMarker;
+        const marker = markerRef.current as MarkerRef;
         marker.setOpacity(1);
-        popRef.current.openOn(map);
-        setLocationCB(marker.getLatLng());
+        popRef.current?.openOn(map);
+        setLocation(marker.getLatLng());
+        dragEndTime.current = new Date().getTime();
       },
       drag: () => {
-        const marker = markerRef.current as LeafletMarker;
-        popRef.current.openOn(map);
+        const marker = markerRef.current as MarkerRef;
+        popRef.current?.openOn(map);
         setPolyline((ary) =>
           ary.length === 1
             ? [...ary, marker.getLatLng()]
@@ -56,16 +58,20 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
         );
       },
     }),
-    [map, setLocationCB],
+    [map, setLocation],
   );
 
   useMapEvents({
     click: (e) => {
-      setLocation(e.latlng);
+      // dragend後にclickイベントが意図せず発生する場合がある(Markerの位置がずれる)
+      // 10ms以内に発生した場合は無視する
+      if (new Date().getTime() - dragEndTime.current > 10) {
+        setLocation(e.latlng);
+      }
     },
   });
 
-  return location === null ? null : (
+  return !location ? null : (
     <>
       <Marker
         draggable={true}

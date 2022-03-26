@@ -23,6 +23,7 @@ body {
   user-select:none;
 }
 
+/* Markerアイコンの色を変更する */
 .tracer-marker{
   filter: hue-rotate(120deg)
 }

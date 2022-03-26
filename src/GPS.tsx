@@ -2,7 +2,6 @@ import { VFC } from 'react';
 import { useMap } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BiCurrentLocation } from 'react-icons/bi';
-
 import { setLocationState } from './utils/altitude';
 
 type propType = {
@@ -16,9 +15,9 @@ const GPS: VFC<propType> = ({ setLocation }) => {
   // 現在位置を取得してマップを移動する
   const onclick = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
-      const { latitude, longitude } = pos.coords;
-      map.flyTo([latitude, longitude], 14);
-      setLocation({ lat: latitude, lng: longitude });
+      const { latitude: lat, longitude: lng } = pos.coords;
+      map.flyTo([lat, lng], 14);
+      setLocation({ lat, lng });
     });
   };
 

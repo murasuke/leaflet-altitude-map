@@ -7,15 +7,15 @@ import { getAltitude, AltitudeDetail } from './utils/altitude';
 /**
  * 位置表示エリア
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
- * ・propsで受け取った値を表示する
+ * ・propsで位置を受け取り、位置から「標高」を求めて表示する
  */
 const LocationIndicator: VFC<{ location: LatLngLiteral }> = ({ location }) => {
   const f = (num: number, fixed = 6) =>
     ('             ' + num.toFixed(fixed)).slice(-6 - fixed);
   const formatAlt = (alt: AltitudeDetail) =>
-    `標高:${f(alt.h ?? 0, alt.fixed)}m
-緯度:${f(alt.pos.lat)}
-経度:${f(alt.pos.lng)}`;
+    `標高:${f(alt.h ?? 0, alt.fixed)}m\n緯度:${f(alt.pos.lat)}\n経度:${f(
+      alt.pos.lng,
+    )}`;
 
   const [altitude, setAlt] = useState<AltitudeDetail>();
 
