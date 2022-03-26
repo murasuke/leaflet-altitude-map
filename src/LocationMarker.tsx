@@ -1,11 +1,7 @@
 import { VFC, useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { Marker as LeafletMarker, LatLngLiteral } from 'leaflet';
 import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
-import {
-  getAltitude,
-  AltitudeDetail,
-  setAltState,
-  Position,
-} from './utils/altitude';
+import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
 import { distance } from './utils/distance';
 
 type propType = {
@@ -22,37 +18,46 @@ type propType = {
 const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
   const { pos } = altitude;
   const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const [position, setPosition] = useState(pos);
-  const [polyline, setPolyline] = useState<Position[]>([pos]);
+  const [position, setPosition] = useState<LatLngLiteral>(pos);
+  const [polyline, setPolyline] = useState<LatLngLiteral[]>([pos]);
 
   const markerRef = useRef<any>(null);
-  const lineRef = useRef<any>(null);
   const popRef = useRef<any>(null);
   const map = useMap();
 
   const eventHandlers = useMemo(
     () => ({
       dragstart: () => {
-        const marker = markerRef.current;
+        const marker = markerRef.current as LeafletMarker;
         marker.setOpacity(0.6);
-        setPolyline([marker.getLatLng()]);
-      },
-      dragend() {
-        const marker = markerRef.current;
-        if (marker != null) {
-          marker.setOpacity(1);
-          setPosition(marker.getLatLng());
-          popRef.current.openOn(map);
-        }
-      },
-      drag() {
-        const marker = markerRef.current;
+
+        const { lat, lng } = marker.getLatLng();
         setPolyline((ary) => {
-          return [ary[0], marker.getLatLng()];
+          if (ary.length >= 1) {
+            const last = ary.slice(-1)[0];
+            if (last.lat === lat && last.lng === lng) {
+              return [...ary, marker.getLatLng()];
+            }
+          }
+          return [marker.getLatLng()];
         });
       },
+      dragend() {
+        const marker = markerRef.current as LeafletMarker;
+        marker.setOpacity(1);
+        popRef.current.openOn(map);
+      },
+      drag() {
+        const marker = markerRef.current as LeafletMarker;
+        popRef.current.openOn(map);
+        setPolyline((ary) =>
+          ary.length === 1
+            ? [...ary, marker.getLatLng()]
+            : [...ary.slice(0, ary.length - 1), marker.getLatLng()],
+        );
+      },
     }),
-    [],
+    [map],
   );
 
   useMapEvents({
@@ -79,6 +84,16 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
     });
   }, [pos.lat, pos.lng, callback]);
 
+  const polylineDistance = (polyLine: LatLngLiteral[]) => {
+    let total = 0;
+    for (let i = 1; i < polyLine.length; i++) {
+      const { lat: lat1, lng: lng1 } = polyLine[i - 1];
+      const { lat: lat2, lng: lng2 } = polyLine[i];
+      total += distance(lat1, lng1, lat2, lng2);
+    }
+    return total;
+  };
+
   return position === null ? null : (
     <>
       <Marker
@@ -88,17 +103,10 @@ const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
         ref={markerRef}
       >
         <Popup ref={popRef}>
-          {polyline.length > 1
-            ? `${distance(
-                polyline[0].lat,
-                polyline[0].lng,
-                polyline[1].lat,
-                polyline[1].lng,
-              ).toFixed(5)} km`
-            : ''}
+          {polylineDistance(polyline).toFixed(3) + 'km'}
         </Popup>
       </Marker>
-      {polyline ? <Polyline positions={polyline} ref={lineRef} /> : null}
+      {polyline ? <Polyline positions={polyline} /> : null}
     </>
   );
 };

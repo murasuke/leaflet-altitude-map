@@ -17,7 +17,7 @@ const GPS: VFC<propType> = ({ setAltitude }) => {
   const onclick = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
-      map.flyTo([latitude, longitude], map.getZoom());
+      map.flyTo([latitude, longitude], 14);
       getAltitude(latitude, longitude, (alt, altDetail) => {
         if (altDetail) {
           setAltitude(altDetail);

@@ -7,7 +7,9 @@ import { AltitudeDetail } from './utils/altitude';
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
  * ・propsで受け取った値を表示する
  */
-const AltitudeArea: VFC<{ altitude?: AltitudeDetail }> = ({ altitude }) => {
+const LocationIndicator: VFC<{ altitude?: AltitudeDetail }> = ({
+  altitude,
+}) => {
   const f = (num: number, fixed = 7) =>
     ('             ' + num.toFixed(fixed)).slice(-6 - fixed);
   const formatAlt = (alt: AltitudeDetail) =>
@@ -24,4 +26,4 @@ const AltitudeArea: VFC<{ altitude?: AltitudeDetail }> = ({ altitude }) => {
   );
 };
 
-export default AltitudeArea;
+export default LocationIndicator;

@@ -1,16 +1,16 @@
 import { VFC, useState, useEffect } from 'react';
 import { LatLng } from 'leaflet';
-import { ScaleControl, Polyline } from 'react-leaflet';
+import { ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
 import { AltitudeDetail } from './utils/altitude';
 import LayredMap from './LayeredMap';
-import AltitudeArea from './AltitudeArea';
+import LocationIndicator from './LocationIndicator';
 import LocationMarker from './LocationMarker';
 import GPS from './GPS';
+import LocationTracer from './LocationTracer';
 
 import 'leaflet/dist/leaflet.css';
 import './App.css';
-import RecordPosition from './RecordPosition';
 
 /**
  * 地図表示
@@ -20,7 +20,6 @@ import RecordPosition from './RecordPosition';
  */
 const App: VFC = () => {
   const [altitude, setAltitude] = useState<AltitudeDetail>();
-  const [posArray, setPosArray] = useState<[number, number][]>([]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
@@ -40,11 +39,10 @@ const App: VFC = () => {
   } else {
     return (
       <LayredMap center={altitude.pos}>
-        <AltitudeArea altitude={altitude} />
         <LocationMarker altitude={altitude} setAltitude={setAltitude} />
+        <LocationIndicator altitude={altitude} />
         <GPS setAltitude={setAltitude} />
-        <RecordPosition setPosArray={setPosArray} />
-        <Polyline color="red" positions={posArray} />
+        <LocationTracer />
         <ScaleControl />
       </LayredMap>
     );
