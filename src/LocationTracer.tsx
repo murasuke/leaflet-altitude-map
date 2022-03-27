@@ -17,6 +17,7 @@ const PositionTracer: VFC = () => {
   const markerRef = useRef<MarkerRef>(null);
   const popRef = useRef<PopupRef>(null);
 
+  // 位置を保存する関数(データ量削減のため、前回からの移動距離が5m未満の場合は追加しない)
   const recordPosition = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
@@ -33,13 +34,12 @@ const PositionTracer: VFC = () => {
         if (ary.length > 1) {
           popRef.current?.openOn(map);
         }
-        // popRef.current?.openOn(map);
         return [...ary, [latitude, longitude]];
       });
     });
   };
 
-  // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
+  // タイマーで位置を保存
   const onclick = () => {
     if (!recording) {
       recordPosition();
@@ -56,6 +56,7 @@ const PositionTracer: VFC = () => {
   };
 
   useEffect(() => {
+    // アイコンの色を変更するためclass追加(App.cssに下記のスタイルを追加する)
     // .tracer-marker { filter: hue-rotate(120deg) }
     markerRef.current?.getElement()?.classList.add('tracer-marker');
     markerRef.current?.setOpacity(0);

@@ -30,6 +30,11 @@ export function distance(
   );
 }
 
+/**
+ * Calculate the sum of the distance of multiple positions
+ * @param polyLine
+ * @returns
+ */
 export const polylineDistance = (polyLine: { lat: number; lng: number }[]) => {
   let total = 0;
   for (let i = 1; i < polyLine.length; i++) {

@@ -8,7 +8,7 @@ https://github.com/murasuke/leaflet-altitude-map
 
 完成イメージ
 
-![img40](./img/img40.png)
+![img60](./img/img80.png)
 
 
 ## はじめに
@@ -32,7 +32,7 @@ https://github.com/murasuke/leaflet-altitude-map
 ただき、地理院タイル一覧ページ（https://maps.gsi.go.jp/development/ichiran.html）へのリンクを付けてください。
 ```
 
-一度に実装するのは大変なので４段階に分けて実装しようと思います
+一度に実装するのは大変なので7段階に分けて実装しようと思います
 
   * ①[React Leaflet](https://react-leaflet.js.org/)を利用して最低限の地図アプリを作成する
   * ②クリックした場所の標高を表示する機能を追加する
@@ -41,6 +41,7 @@ https://github.com/murasuke/leaflet-altitude-map
   * ⑤マップの切り替えとオーバーレイ
   * ⑥マーカーをドラッグして距離を計測する
   * ⑦タイマーで位置を記録し、移動距離を表示する
+  （スマホで画面を暗くならないように制御する）
 
 
 ---
@@ -90,7 +91,7 @@ $ npm i -D @types/leaflet
 
 ### ①-1位置を表すアイコン(Marker)の読み込み
 
-React-leafletの不具合？でアイコンが読み込まれないため、最初にアイコンを読み込む処理を作ります。
+React-leafletの不具合？でアイコンが読み込まれないため、最初にアイコンを読み込む処理を作ります
 
 src/utils/initLeaflet.ts
 
@@ -220,11 +221,12 @@ src/utils/altitude.ts
  * 　・標高タイルの詳細仕様はこちらを参照してください。
  */
 
-import Leaflet from 'leaflet';
+import Leaflet, { LatLngLiteral } from 'leaflet';
 
-export type setAltState = React.Dispatch<
-  React.SetStateAction<AltitudeDetail | undefined>
+export type setLocationState = React.Dispatch<
+  React.SetStateAction<LatLngLiteral | undefined>
 >;
+
 type LeafletClass = (new (...args: any[]) => any) & typeof Leaflet.Class;
 
 type UrlInfo = {
@@ -543,11 +545,18 @@ export const getAltitude = (
 
  * クリックした位置の「標高」「緯度」「経度」を表示するエリアです
  * 右上に表示します
- * propsで受け取った値を表示します
+ * propsで位置を受け取り、位置から「標高」を求めて表示します
 
 画面の四隅にアイコンや表示領域を配置するために[react-leaflet-custom-control](https://www.npmjs.com/package/@skyeer/react-leaflet-custom-control)を利用します。
 positionプロパティで表示位置を指定し、内部は任意のタグを記載します。
 
+```tsx
+import Control from 'react-leaflet-custom-control';
+
+<Control position="topright">
+  {/* 任意のタグを記載する。右上に固定表示される */}
+</Control>
+```
 
 * インストール
 ```bash
@@ -605,42 +614,36 @@ export default LocationIndicator;
 src/LocationMarker.tsx
 
  ```tsx
-import { VFC } from "react";
-import { LatLng } from "leaflet";
-import { Marker, Popup, useMapEvents } from "react-leaflet";
-import { getAltitude, AltitudeDetail } from "./utils/altitude";
+import { VFC } from 'react';
+import { LatLngLiteral } from 'leaflet';
+import { Marker, Popup, useMapEvents } from 'react-leaflet';
 
 type propType = {
-  altitude?: AltitudeDetail;
-  setAltitude: React.Dispatch<React.SetStateAction<LatLngLiteral | undefined>>;
+  location: LatLngLiteral;
+  setLocation: React.Dispatch<React.SetStateAction<LatLngLiteral>;
 };
 
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコン表示する
- * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
+ *   ・クリックした位置を、親コンポーネント(App)へ通知する(state)し、その位置にMarkerを表示する
  */
-const LocationMarker: VFC<propType> = ({ setAltitude, altitude }) => {
-  const position = new LatLng(pos.lat, pos.lng);
+const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
   useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      // クリックされた位置の標高を取得
-      getAltitude(lat, lng, (alt, altDetail) => {
-        console.log(alt + "m");
-        setAltitude(altDetail);
-      });
+    click: (e) => {
+      setLocation(e.latlng);
     },
   });
 
-  return position === null ? null : (
-    <Marker position={position}>
-      <Popup>{`Alt(${(altitude?.h ?? 0).toFixed(1) + "m"}) ${position}`}</Popup>
+  return !location ? null : (
+    <Marker position={location}>
+      <Popup>{location}</Popup>
     </Marker>
   );
 };
 
 export default LocationMarker;
+
  ```
 
 * 位置表示エリアの大きさ、フォント、マージンを調整するため下記を追加します
@@ -666,32 +669,36 @@ src/App.css
 src/App.tsx
 
 ```tsx
-import { VFC, useState } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import "./utils/initLeaflet";
-import { AltitudeDetail } from "./utils/altitude";
-import AltitudeArea from "./AltitudeArea";
-import LocationMarker from "./LocationMarker";
+import { VFC, useState } from 'react';
+import { LatLngLiteral } from 'leaflet';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import './utils/initLeaflet';
+import LocationMarker from './LocationMarker';
+import LocationDispArea from './LocationDispArea';
 
-import "leaflet/dist/leaflet.css";
-import "./App.css";
+import 'leaflet/dist/leaflet.css';
+import './App.css';
 
 /**
  * 地図表示
  * ・上記で作成した「情報エリア」「位置表示アイコン」を表示する
  * ・位置情報をstateで保持する。値を更新するためLocationMakerに更新メソッドを引き渡す
+ * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
-  const [altitude, setAltitude] = useState<AltitudeDetail>();
+  const [location, setLocation] = useState<LatLngLiteral>({
+    lat: 35.3607411,
+    lng: 138.727262,
+  });
 
   return (
-    <MapContainer center={{ lat: 35.3607411, lng: 138.727262 }} zoom={13}>
+    <MapContainer center={location} zoom={13}>
       <TileLayer
         attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
         url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
       />
-      <AltitudeArea altitude={altitude} />
-      <LocationMarker altitude={altitude} setAltitude={setAltitude} />
+      <LocationDispArea location={location} />
+      <LocationMarker location={location} setLocation={setLocation} />
     </MapContainer>
   );
 };
@@ -715,22 +722,24 @@ npm run start
 
 画面表示時に、現在位置を取得してマップを表示すると共に、標高も取得して表示します
 
-* navigator.geolocation.getCurrentPosition()で現在位置を取得しstateを更新します
+* `App.tsx`の初期化時に、navigator.geolocation.getCurrentPosition()で現在位置を取得しstateを更新します
 * マップを現在位置に移動します(stateの位置を表示)
-* 標高を再表示します(useEffectの依存変数により更新)
+* AppコンポーネントのStateを更新することで、位置情報表示を最新にします
+
+
 
 src/App.tsx
 
 ```tsx
-import { VFC, useState, useEffect } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import "./utils/initLeaflet";
-import { AltitudeDetail } from "./utils/altitude";
-import AltitudeArea from "./AltitudeArea";
-import LocationMarker from "./LocationMarker";
+import { VFC, useState, useEffect } from 'react';
+import { LatLngLiteral } from 'leaflet';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import './utils/initLeaflet';
+import LocationMarker from './LocationMarker';
+import LocationDispArea from './LocationDispArea';
 
-import "leaflet/dist/leaflet.css";
-import "./App.css";
+import 'leaflet/dist/leaflet.css';
+import './App.css';
 
 /**
  * 地図表示
@@ -739,97 +748,28 @@ import "./App.css";
  * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
-  const [altitude, setAltitude] = useState<AltitudeDetail>();
+  const [location, setLocation] = useState<LatLngLiteral>();
 
+  // Mapの初期表示時、現在位置を表示する
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
-      const position = new LatLng(e.coords.latitude, e.coords.longitude);
-      setAltitude({
-        fixed: 0,
-        h: 0,
-        pos: { ...position, zoom: 14 },
-        title: '',
-        type: '',
-      });
+      const { latitude: lat, longitude: lng } = e.coords;
+      setLocation({ lat, lng });
     });
   }, []);
 
-  if (!altitude) {
-    return <></>;
-  } else {
-    return (
-      <MapContainer center={altitude.pos} zoom={14}>
-        <TileLayer
-          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
-          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
-        />
-        <AltitudeArea altitude={altitude} />
-        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
-      </MapContainer>
-    );
-  }
-};
-export default App;
- ```
-
-## ③-2現在位置の更新に合わせて標高を再取得するように変更
-
-* useEffect()の依存変数を利用して、親から渡された位置が変わった場合、標高を再取得します
-
-src/LocationMarker.tsx
-
-```tsx
-import { VFC, useEffect, useCallback } from 'react';
-import { LatLng } from 'leaflet';
-import { Marker, Popup, useMapEvents } from 'react-leaflet';
-import { getAltitude, AltitudeDetail, setAltState } from './utils/altitude';
-
-type propType = {
-  altitude: AltitudeDetail;
-  setAltitude: setAltState;
-};
-
-/**
- * 位置表示アイコン
- * ・クリックした位置にアイコン表示する
- * ・位置から標高を取得し、位置表示エリアに引き渡す(state経由)
- * ・親から渡された位置が変わった場合、標高を再取得する
- */
-const LocationMarker: VFC<propType> = ({ altitude, setAltitude }) => {
-  const { pos } = altitude;
-  const callback = useCallback((e) => setAltitude(e), [setAltitude]);
-  const position = new LatLng(pos.lat, pos.lng);
-  useMapEvents({
-    click(e) {
-      const { lat, lng } = e.latlng;
-      // クリックされた位置の標高を取得
-      getAltitude(lat, lng, (alt, altDetail) => {
-        console.log(`標高:${alt}m`);
-        console.log(`緯度:${pos.lat} 経度:${pos.lng}`);
-        if (altDetail) {
-          setAltitude(altDetail);
-        }
-      });
-    },
-  });
-
-  // 親から渡された位置が変わった場合、標高を再取得
-  useEffect(() => {
-    getAltitude(pos.lat, pos.lng, (alt, altDetail) => {
-      if (altDetail) {
-        callback(altDetail);
-      }
-    });
-  }, [pos.lat, pos.lng, callback]);
-
-  return position === null ? null : (
-    <Marker position={position}>
-      <Popup>{`Alt(${(altitude?.h ?? 0).toFixed(1) + 'm'}) ${position}`}</Popup>
-    </Marker>
+  return !location? null: (
+    <MapContainer center={location} zoom={13}>
+      <TileLayer
+        attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+        url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+      />
+      <LocationDispArea location={location} />
+      <LocationMarker location={location} setLocation={setLocation} />
+    </MapContainer>
   );
 };
-
-export default LocationMarker;
+export default App;
 ```
 
 ## ④GPSアイコンを追加して現在位置に戻せるようにする
@@ -843,37 +783,37 @@ GPSアイコンを利用するため[React Icons](https://react-icons.github.io/
 ![img30](./img/img30.png)
 
 * アイコン(BiCurrentLocation)を読み込みます
-* クリック時に現在位置の取得してマップを移動するとともに、標高の再表示を行います
+* クリック時に現在位置の取得してマップを移動します
+* AppコンポーネントのStateを更新することで、位置情報表示を最新にします
 
 src/GPS.tsx
 
 ```tsx
-
 import { VFC } from 'react';
 import { useMap } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BiCurrentLocation } from 'react-icons/bi';
-
-import { setAltState, getAltitude } from './utils/altitude';
+import { setLocationState } from './utils/altitude';
 
 type propType = {
-  setAltitude: setAltState;
+  setLocation: setLocationState;
 };
 
-const GPS: VFC<propType> = ({ setAltitude }) => {
+/**
+ * GPSアイコン
+ * ・現在位置を取得
+ * ・マップを移動する
+ */
+const GPS: VFC<propType> = ({ setLocation }) => {
   const iconSize = '30px';
   const map = useMap();
 
-  // 現在位置を取得してマップを移動すると共に、標高の再表示を行う
+  // 現在位置を取得してマップを移動する
   const onclick = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
-      const { latitude, longitude } = pos.coords;
-      map.flyTo([latitude, longitude], map.getZoom());
-      getAltitude(latitude, longitude, (alt, altDetail) => {
-        if (altDetail) {
-          setAltitude(altDetail);
-        }
-      });
+      const { latitude: lat, longitude: lng } = pos.coords;
+      map.flyTo([lat, lng], 14);
+      setLocation({ lat, lng });
     });
   };
 
@@ -896,15 +836,15 @@ export default GPS;
 * `<MapContainer>`タグ内に`<GPS>`を追加します
 * 縮尺を表示するため`<ScaleControl />`も追加します
 
+src/App.tsx
 
 ```tsx
 import { VFC, useState, useEffect } from 'react';
-import { LatLng } from 'leaflet';
-import { MapContainer, TileLayer, ScaleControl } from 'react-leaflet';
+import { LatLngLiteral } from 'leaflet';
+import { MapContainer, TileLayer } from 'react-leaflet';
 import './utils/initLeaflet';
-import { AltitudeDetail } from './utils/altitude';
-import AltitudeArea from './AltitudeArea';
 import LocationMarker from './LocationMarker';
+import LocationDispArea from './LocationDispArea';
 import GPS from './GPS';
 
 import 'leaflet/dist/leaflet.css';
@@ -917,37 +857,27 @@ import './App.css';
  * ・初期表示時、現在位置を取得してstateを更新する
  */
 const App: VFC = () => {
-  const [altitude, setAltitude] = useState<AltitudeDetail>();
+  const [location, setLocation] = useState<LatLngLiteral>();
 
+  // Mapの初期表示時、現在位置を表示する
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
-      const position = new LatLng(e.coords.latitude, e.coords.longitude);
-      setAltitude({
-        fixed: 0,
-        h: 0,
-        pos: { ...position, zoom: 14 },
-        title: '',
-        type: '',
-      });
+      const { latitude: lat, longitude: lng } = e.coords;
+      setLocation({ lat, lng });
     });
   }, []);
 
-  if (!altitude) {
-    return <></>;
-  } else {
-    return (
-      <MapContainer center={altitude.pos} zoom={14}>
-        <TileLayer
-          attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
-          url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
-        />
-        <AltitudeArea altitude={altitude} />
-        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
-        <GPS setAltitude={setAltitude} />
-        <ScaleControl />
-      </MapContainer>
-    );
-  }
+  return !location ? null : (
+    <MapContainer center={location} zoom={13}>
+      <TileLayer
+        attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+        url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+      />
+      <LocationDispArea location={location} />
+      <LocationMarker location={location} setLocation={setLocation} />
+      <GPS setLocation={setLocation} />
+    </MapContainer>
+  );
 };
 export default App;
 ```
@@ -969,9 +899,8 @@ export default App;
 ![img50](./img/img52.png)
 
 
-* <LayersControl>
-  * <LayersControl.BaseLayer> ：ベースとなるマップ。背景を切り替える
-  * <LayersControl.Overlay>：ベースの表面にオーバーレイ表示するマップ
+  * <LayersControl.BaseLayer> ：ベースとなるマップ。複数の中から１つを選択する
+  * <LayersControl.Overlay>：ベースの表面にオーバーレイ表示するマップ。複数選択可能
 
 src/LayeredMap.tsx
 
@@ -1028,15 +957,463 @@ export default LayeredMap;
 ```
 
 
-src/App.tsxも修正します(該当部分のみ)
+src/App.tsxも修正します(一部省略)
+
+Markerや情報表示エリアは、LayeredMapの子コンポーネントとなるように変更します
 
 ```tsx
-    return (
-      <LayredMap center={altitude.pos}>
-        <AltitudeArea altitude={altitude} />
-        <LocationMarker altitude={altitude} setAltitude={setAltitude} />
-        <GPS setAltitude={setAltitude} />
-        <ScaleControl />
-      </LayredMap>
-    );
+const App: VFC = () => {
+  const [location, setLocation] = useState<LatLngLiteral>();
+
+  // Mapの初期表示時、現在位置を表示する
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((e) => {
+      const { latitude: lat, longitude: lng } = e.coords;
+      setLocation({ lat, lng });
+    });
+  }, []);
+
+  return !location ? null : (
+    <LayeredMap center={location}>
+      <LocationMarker location={location} setLocation={setLocation} />
+      <LocationDispArea location={location} />
+      <GPS setLocation={setLocation} />
+    </LayeredMap>
+  );
+};
+export default App;
+```
+
+## ⑥マーカーをドラッグして距離を計測する
+
+* マーカーをドラッグして距離をポップアップに表示させます
+* 2点間の距離だけではなく、折れ線の合計を表示します
+
+![img60](./img/img60.png)
+
+### ⑥-1緯度、経度から距離を算出する関数
+
+厳密さを求めるほど、計算式が難しくなるようです
+
+* [緯度経度から2地点間の距離を計算する](https://komoriss.com/calculate-distance-between-two-points-from-latitude-and-longitude/)
+
+* [国土地理院に記載されている厳密な計算方法](https://vldb.gsi.go.jp/sokuchi/surveycalc/surveycalc/algorithm/bl2st/bl2st.htm)
+
+今回は厳密な精度を求めないのでこちらのソースを流用させていただきました(2点間だけではなく、折れ線の合計を算出するメソッドを追加しています。)
+https://qiita.com/kawanet/items/a2e111b17b8eb5ac859a
+
+src/utils/distance.ts
+
+```typescript
+/**
+ * calculate distance in kilometers between two points specified by degrees of latitude and longitude
+ *
+ * @author @kawanet
+ * @license MIT
+ * @see https://gist.github.com/kawanet/15c5a260ca3b98bd080bb87cdae57230
+ * @param {number} lat1 - degree of latitude of origin
+ * @param {number} lng1 - degree of longitude of origin
+ * @param {number} lat2 - degree of latitude of destination
+ * @param {number} lng2 - degree of longitude of destination
+ * @return {number} distance in kilometers between origin and destination
+ */
+
+export function distance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) {
+  lat1 *= Math.PI / 180;
+  lng1 *= Math.PI / 180;
+  lat2 *= Math.PI / 180;
+  lng2 *= Math.PI / 180;
+  return (
+    6371 *
+    Math.acos(
+      Math.cos(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1) +
+        Math.sin(lat1) * Math.sin(lat2),
+    )
+  );
+}
+
+/**
+ * Calculate the sum of the distance of multiple positions
+ * @param polyLine
+ * @returns
+ */
+export const polylineDistance = (polyLine: { lat: number; lng: number }[]) => {
+  let total = 0;
+  for (let i = 1; i < polyLine.length; i++) {
+    const { lat: lat1, lng: lng1 } = polyLine[i - 1];
+    const { lat: lat2, lng: lng2 } = polyLine[i];
+    total += distance(lat1, lng1, lat2, lng2);
+  }
+  return total;
+};
+```
+
+### ⑥-2マーカーをDrag＆Drop可能にして、折れ線を引く
+
+ * クリックした位置にアイコンを表示する
+ * Drag&Dropを有効にする
+    * `draggable={true}`を指定し、Drag&Dropを有効にする
+    * `eventHandlers={}`でイベント処理を追加する(dragstart,dragend,drag)
+    * `ref={markerRef}`でMarkerコンポーネントを参照し、操作可能にする
+
+```tsx
+  <Marker
+    draggable={true}
+    eventHandlers={eventHandlers}
+    position={location}
+    ref={markerRef}
+  >
+```
+* Drag&Dropで折れ線を引き、Popupで距離の合計を表示する
+
+  * `useState`で位置の配列を保存するためStateを作成する
+```tsx
+const [polyline, setPolyline] = useState<LatLngLiteral[]>([location]);
+```
+  * イベント処理についてはソース内のコメント参照
+
+
+### ⑥-3折れ線の距離を算出し、ポップアップに表示する
+
+* 作成済みの`polylineDistance`関数に位置の配列`polyline`を引き渡して表示する
+    * Drag&Drop中、常時にポップアップを表示するため、イベント内で`popRef.current?.openOn(map);`を呼び出す。
+
+
+src/LocationMarker.tsx
+
+```tsx
+import { VFC, useState, useRef, useMemo } from 'react';
+import { Marker as MarkerRef, Popup as PopupRef, LatLngLiteral } from 'leaflet';
+import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { setLocationState } from './utils/altitude';
+import { polylineDistance } from './utils/distance';
+
+type propType = {
+  location: LatLngLiteral;
+  setLocation: setLocationState;
+};
+
+/**
+ * 位置表示アイコン
+ * ・クリックした位置にアイコンを表示する
+ *   ・クリックした位置を、親コンポーネント(App)へ通知する(state)し、その位置にMarkerを表示する
+ * ・Drag&Dropすると移動した間に線を引くとともに、Popupで距離を表示する
+ * ・連続してDrag&Dropした場合、折れ線を表示し、合計距離を表示する
+ *   ・stateが空配列の場合、開始地点と終了地点を追加する
+ *   ・終了地点はdragイベント中に、移動先の値で更新する(PolyLineコントロールが線を表示する)
+ *   ・開始地点が前回の最後の位置と同じ場合、連続したDrag&Dropと判断し、終点を追加する
+ */
+const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
+  const [polyline, setPolyline] = useState<LatLngLiteral[]>([location]);
+
+  const markerRef = useRef<MarkerRef>(null);
+  const popRef = useRef<PopupRef>(null);
+  const map = useMap();
+
+  const dragEndTime = useRef<number>(0);
+
+  const eventHandlers = useMemo(
+    () => ({
+      dragstart: () => {
+        const marker = markerRef.current as MarkerRef;
+        marker.setOpacity(0.6);
+
+        const { lat, lng } = marker.getLatLng();
+        setPolyline((ary) => {
+          if (ary.length >= 1) {
+            const last = ary.slice(-1)[0];
+            if (last.lat === lat && last.lng === lng) {
+              // 前回の終了位置が、今回の開始位置と同じ場合、終了位置を追加(折れ線追加)
+              return [...ary, marker.getLatLng()];
+            }
+          }
+          // 開始位置、終了位置を開始位置で初期化
+          return [marker.getLatLng(), marker.getLatLng()];
+        });
+      },
+      dragend: () => {
+        const marker = markerRef.current as MarkerRef;
+        marker.setOpacity(1);
+        popRef.current?.openOn(map);
+        setLocation(marker.getLatLng());
+        dragEndTime.current = new Date().getTime();
+      },
+      drag: () => {
+        const marker = markerRef.current as MarkerRef;
+        popRef.current?.openOn(map);
+        // 終了位置を更新
+        setPolyline((ary) => [
+          ...ary.slice(0, ary.length - 1),
+          marker.getLatLng(),
+        ]);
+      },
+    }),
+    [map, setLocation],
+  );
+
+  useMapEvents({
+    click: (e) => {
+      // dragend後に意図せずclickイベントが発生する場合がある(Markerの位置がずれる)
+      // 10ms以内に発生した場合は無視する
+      if (new Date().getTime() - dragEndTime.current > 10) {
+        setLocation(e.latlng);
+      }
+    },
+  });
+
+  return !location ? null : (
+    <>
+      <Marker
+        draggable={true}
+        eventHandlers={eventHandlers}
+        position={location}
+        ref={markerRef}
+      >
+        <Popup ref={popRef}>
+          {polylineDistance(polyline).toFixed(3) + 'km'}
+        </Popup>
+      </Marker>
+      {polyline ? <Polyline positions={polyline} /> : null}
+    </>
+  );
+};
+
+export default LocationMarker;
+```
+
+
+## ⑦タイマーで位置を記録し、移動距離を表示する
+
+* 赤マーカーが移動し、移動した履歴に赤線が表示されます
+
+![img70](./img/img70.png)
+
+
+### ⑦-1記録アイコン(GPSアイコンの下、有効時赤)を追加
+
+実装イメージ
+```tsx
+import Control from 'react-leaflet-custom-control';
+import { BsRecordCircle } from 'react-icons/bs';
+
+return (
+  <>
+    <Control
+      position="topleft"
+      style={{ backgroundColor: '#FFF', height: iconSize }}
+    >
+      <BsRecordCircle
+        color={timerId.current ? 'red' : 'black'}
+        size={iconSize}
+        onClick={() => onclick()}
+      />
+    </Control>
+
+    <Marker
+      position={locationLog.length ? locationLog.slice(-1)[0] : [0, 0]}
+      ref={markerRef}
+    >
+      <Popup ref={popRef}>
+        {polylineDistance(
+          locationLog.map((item) => {
+            return { lat: item[0], lng: item[1] };
+          }),
+        ).toFixed(3) + 'km'}
+      </Popup>
+    </Marker>
+  </>
+```
+
+### ⑦-2タイマーで位置を保存
+実装イメージ
+```tsx
+  const [locationLog, setLocationLog] = useState<[number, number][]>([]);
+
+  // 位置を保存する関数(データ量削減のため、前回からの移動距離が5m未満の場合は追加しない)
+  const recordPosition = () => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+
+      setLocationLog((ary) => {
+        if (ary.length > 0) {
+          const [lastLat, lastLng] = ary.slice(-1)[0];
+          if (distance(lastLat, lastLng, latitude, longitude) < 5 / 1000) {
+            // 移動距離が5m未満の場合追加しない
+            return ary;
+          }
+        }
+        map.flyTo([latitude, longitude]);
+        if (ary.length > 1) {
+          popRef.current?.openOn(map);
+        }
+        return [...ary, [latitude, longitude]];
+      });
+    });
+  };
+
+  // タイマーで位置を保存
+  const onclick = () => {
+    if (!recording) {
+      recordPosition();
+      markerRef.current?.setOpacity(1);
+      timerId.current = setInterval(recordPosition, 3000);
+      noSleepRef.current.enable();
+    } else {
+      clearInterval(timerId.current as NodeJS.Timer);
+      markerRef.current?.setOpacity(0);
+      timerId.current = 0;
+      noSleepRef.current.disable();
+    }
+    setRecording(!recording);
+  };
+```
+
+### ⑦-3保存した位置を線で結ぶ
+
+*  PolyLineを追加する
+
+```tsx
+<Polyline color="red" positions={locationLog} />
+```
+
+### ⑦-4位置記録中は、スマホの画面が暗くならないように制御する
+
+[Wake Lock API](https://developer.mozilla.org/ja/docs/Web/API/Navigator/wakeLock)で制御できるようですが、実験的な機能のため一部のブラウザ(Chrome)しかサポートされていません
+
+Chrome以外にも汎用的に利用できる[NoSleep.js](https://github.com/richtr/NoSleep.js)というパッケージを組み込みます。(Wake Lock APIが利用できない場合、見えない動画を表示し続けているようです)
+
+インストール
+```bash
+npm i nosleep.js
+```
+
+使い方
+```jsx
+const noSleep = new NoSleep();
+// 有効化
+noSleep.enable();
+// 無効化
+noSleep.disable();
+```
+※React内では値の保持のため`useRef`を利用しているため、書き方が異なります
+
+### ⑦ソース全体
+
+src/LocationTracer.tsx
+
+```tsx
+import { VFC, useState, useRef, useEffect } from 'react';
+import { Popup as PopupRef, Marker as MarkerRef } from 'leaflet';
+import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
+import Control from 'react-leaflet-custom-control';
+import { BsRecordCircle } from 'react-icons/bs';
+import NoSleep from 'nosleep.js';
+import { distance, polylineDistance } from './utils/distance';
+
+const PositionTracer: VFC = () => {
+  const iconSize = '30px';
+  const [locationLog, setLocationLog] = useState<[number, number][]>([]);
+  const [recording, setRecording] = useState(false);
+  const noSleepRef = useRef<NoSleep>(new NoSleep());
+  const map = useMap();
+  const timerId = useRef<NodeJS.Timer | number>(null!);
+
+  const markerRef = useRef<MarkerRef>(null);
+  const popRef = useRef<PopupRef>(null);
+
+  // 位置を保存する関数(データ量削減のため、前回からの移動距離が5m未満の場合は追加しない)
+  const recordPosition = () => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+
+      setLocationLog((ary) => {
+        if (ary.length > 0) {
+          const [lastLat, lastLng] = ary.slice(-1)[0];
+          if (distance(lastLat, lastLng, latitude, longitude) < 5 / 1000) {
+            // 移動距離が5m未満の場合追加しない
+            return ary;
+          }
+        }
+        map.flyTo([latitude, longitude]);
+        if (ary.length > 1) {
+          popRef.current?.openOn(map);
+        }
+        return [...ary, [latitude, longitude]];
+      });
+    });
+  };
+
+  // タイマーで位置を保存
+  const onclick = () => {
+    if (!recording) {
+      recordPosition();
+      markerRef.current?.setOpacity(1);
+      timerId.current = setInterval(recordPosition, 3000);
+      noSleepRef.current.enable();
+    } else {
+      clearInterval(timerId.current as NodeJS.Timer);
+      markerRef.current?.setOpacity(0);
+      timerId.current = 0;
+      noSleepRef.current.disable();
+    }
+    setRecording(!recording);
+  };
+
+  useEffect(() => {
+    // アイコンの色を変更するためclass追加(App.cssに下記のスタイルを追加する)
+    // .tracer-marker { filter: hue-rotate(120deg) }
+    markerRef.current?.getElement()?.classList.add('tracer-marker');
+    markerRef.current?.setOpacity(0);
+  }, []);
+
+  return (
+    <>
+      <Control
+        position="topleft"
+        style={{ backgroundColor: '#FFF', height: iconSize }}
+      >
+        <BsRecordCircle
+          color={timerId.current ? 'red' : 'black'}
+          size={iconSize}
+          onClick={() => onclick()}
+        />
+      </Control>
+
+      <Polyline color="red" positions={locationLog} />
+
+      <Marker
+        position={locationLog.length ? locationLog.slice(-1)[0] : [0, 0]}
+        ref={markerRef}
+      >
+        <Popup ref={popRef}>
+          {polylineDistance(
+            locationLog.map((item) => {
+              return { lat: item[0], lng: item[1] };
+            }),
+          ).toFixed(3) + 'km'}
+        </Popup>
+      </Marker>
+    </>
+  );
+};
+
+export default PositionTracer;
+
+```
+
+
+src/App.css
+
+アイコンの色を赤に変更(色相を変更)するためのフィルタ
+
+```css
+/* Markerアイコンの色を変更する */
+.tracer-marker{
+  filter: hue-rotate(120deg)
+}
 ```

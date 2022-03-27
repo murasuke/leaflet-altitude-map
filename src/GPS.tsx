@@ -8,6 +8,11 @@ type propType = {
   setLocation: setLocationState;
 };
 
+/**
+ * GPSアイコン
+ * ・現在位置を取得
+ * ・マップを移動する
+ */
 const GPS: VFC<propType> = ({ setLocation }) => {
   const iconSize = '30px';
   const map = useMap();
