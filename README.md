@@ -13,14 +13,13 @@ https://github.com/murasuke/leaflet-altitude-map
 
 ## はじめに
 
-地図を見ているとその場所の標高が知りたいと思うときがありませんか？
+地図アプリを作成するにあたり、Google Maps APIが有料(無料枠はあるが、カード登録が必要)だったため
+無料で使える`は国土地理院のデータ`＋[leafletjs](https://leafletjs.com/)の組み合わせを試してみることにしました。
 
-いつも使っている[GoogleMap](https://www.google.co.jp/maps/)では任意の場所の標高がわからず何とかしたいと思っていました。
-
-調べてみると、国土地理院のサイトで[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)が公開されています。JQueryを使っているため、そのままではReactで利用ができませんが、改修すれば何とかなりそうです。
-
-という訳で[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)を改修して、地図アプリ([React Leaflet](https://react-leaflet.js.org/))に組み込んでみようと思います。
-
+ただ地図を表示するだけではつまらないため、いくつか機能を追加します。
+1. クリックした地点の標高を表示する
+2. 複数点間の距離を表示する
+3. GPSから取得した位置情報から移動距離を求める
 
 * 地図データは国土地理院のデータを利用しています。リアルタイムに地図を表示するプログラムであれば、出展の明示のみで利用可能なようです。
 
@@ -47,6 +46,8 @@ https://github.com/murasuke/leaflet-altitude-map
 ---
 ### ※参考
 ### 国土地理院の解説ページ
+
+国土地理院のサイトで[標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)が公開されています。JQueryを使っているため、そのままではReactで利用ができませんが、改修すれば何とかなりそうです。
 
 * [標高を求めるプログラム](https://maps.gsi.go.jp/development/elevation.html)
 * [標高タイルの詳細仕様](https://maps.gsi.go.jp/development/demtile.html)
