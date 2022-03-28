@@ -14,7 +14,7 @@ https://github.com/murasuke/leaflet-altitude-map
 ## はじめに
 
 地図アプリを作成するにあたり、Google Maps APIが有料(無料枠はあるが、カード登録が必要)だったため
-無料で使える`は国土地理院のデータ`＋[leafletjs](https://leafletjs.com/)の組み合わせを試してみることにしました。
+無料で使える`国土地理院のデータ`＋[leafletjs](https://leafletjs.com/)の組み合わせを試してみることにしました。
 
 ただ地図を表示するだけではつまらないため、いくつか機能を追加します。
 1. クリックした地点の標高を表示する
