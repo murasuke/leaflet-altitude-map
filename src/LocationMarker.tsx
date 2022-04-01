@@ -1,8 +1,7 @@
-import { VFC, useState, useRef, useMemo } from 'react';
+import { VFC, useRef } from 'react';
 import { Marker as MarkerRef, Popup as PopupRef, LatLngLiteral } from 'leaflet';
-import { Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { Marker, Popup, useMapEvents } from 'react-leaflet';
 import { setLocationState } from './utils/altitude';
-import { polylineDistance } from './utils/distance';
 
 type propType = {
   location: LatLngLiteral;
