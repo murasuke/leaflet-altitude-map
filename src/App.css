@@ -28,3 +28,8 @@ body {
   filter: hue-rotate(120deg)
 }
 
+/* Markerアイコンの色を変更する */
+.measure-marker{
+  filter: hue-rotate(240deg)
+}
+

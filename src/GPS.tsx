@@ -1,6 +1,7 @@
 import { VFC } from 'react';
 import { useMap } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
+import ReactTooltip from 'react-tooltip';
 import { BiCurrentLocation } from 'react-icons/bi';
 import { setLocationState } from './utils/altitude';
 
@@ -31,7 +32,10 @@ const GPS: VFC<propType> = ({ setLocation }) => {
       position="topleft"
       style={{ backgroundColor: '#FFF', height: iconSize }}
     >
-      <BiCurrentLocation size={iconSize} onClick={() => onclick()} />
+      <div data-tip={'現在位置へ移動'}>
+        <BiCurrentLocation size={iconSize} onClick={() => onclick()} />
+        <ReactTooltip type="info" place="right" />
+      </div>
     </Control>
   );
 };

@@ -3,6 +3,7 @@ import { Popup as PopupRef, Marker as MarkerRef } from 'leaflet';
 import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { BsRecordCircle } from 'react-icons/bs';
+import ReactTooltip from 'react-tooltip';
 import NoSleep from 'nosleep.js';
 import { distance, polylineDistance } from './utils/distance';
 
@@ -68,11 +69,14 @@ const PositionTracer: VFC = () => {
         position="topleft"
         style={{ backgroundColor: '#FFF', height: iconSize }}
       >
-        <BsRecordCircle
-          color={timerId.current ? 'red' : 'black'}
-          size={iconSize}
-          onClick={() => onclick()}
-        />
+        <div data-tip={recording ? 'トレース中' : '現在位置をトレース'}>
+          <BsRecordCircle
+            color={timerId.current ? 'red' : 'black'}
+            size={iconSize}
+            onClick={() => onclick()}
+          />
+          <ReactTooltip type="info" place="right" />
+        </div>
       </Control>
 
       <Polyline color="red" positions={locationLog} />

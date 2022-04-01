@@ -9,6 +9,8 @@ type propType = {
   setLocation: setLocationState;
 };
 
+const gmap = 'https://www.google.com/maps/search/?api=1&query=';
+
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコンを表示する
@@ -86,10 +88,16 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
         ref={markerRef}
       >
         <Popup ref={popRef}>
-          {polylineDistance(polyline).toFixed(3) + 'km'}
+          {polyline.length > 1 ? (
+            polylineDistance(polyline).toFixed(3) + 'km'
+          ) : (
+            <a href={`${gmap}${location.lat},${location.lng}`} target="blank">
+              googleマップで開く
+            </a>
+          )}
         </Popup>
       </Marker>
-      {polyline ? <Polyline positions={polyline} /> : null}
+      {polyline && <Polyline positions={polyline} />}
     </>
   );
 };

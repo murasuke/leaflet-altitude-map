@@ -8,6 +8,7 @@ import LocationMarker from './LocationMarker';
 import LocationDispArea from './LocationDispArea';
 import GPS from './GPS';
 import LocationTracer from './LocationTracer';
+import ClickMeasure from './ClickMeasure';
 
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -20,6 +21,7 @@ import './App.css';
  */
 const App: VFC = () => {
   const [location, setLocation] = useState<LatLngLiteral>();
+  const [measureMode, setMeasureMode] = useState(false);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((e) => {
@@ -30,11 +32,19 @@ const App: VFC = () => {
 
   return !location ? null : (
     <LayredMap center={location}>
-      <LocationMarker location={location} setLocation={setLocation} />
+      {!measureMode && (
+        <LocationMarker location={location} setLocation={setLocation} />
+      )}
       <LocationDispArea location={location} />
       <GPS setLocation={setLocation} />
       <LocationTracer />
       <ScaleControl />
+      <ClickMeasure
+        location={location}
+        setLocation={setLocation}
+        measureMode={measureMode}
+        setMeasureMode={setMeasureMode}
+      />
     </LayredMap>
   );
 };
