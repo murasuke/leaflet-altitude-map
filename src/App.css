@@ -33,5 +33,10 @@ body {
   filter: hue-rotate(240deg)
 }
 
-div.measure-clear { padding:1px; font-size: 11px; border:0px; color: darkblue; text-align: center;}
+div.measure-clear {
+  font-size: 11px;
+  color: darkblue;
+  text-align: center;
+  user-select:none;
+}
 div.measure-clear:hover{ text-decoration: underline;}
