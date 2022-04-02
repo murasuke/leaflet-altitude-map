@@ -1,6 +1,5 @@
-import { VFC, useState, useRef, useEffect } from 'react';
-import { Popup as PopupRef, Marker as MarkerRef } from 'leaflet';
-import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
+import { VFC, useState } from 'react';
+import { useMap } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
 import { FaSearchLocation } from 'react-icons/fa';
 import { normalize } from '@geolonia/normalize-japanese-addresses';
@@ -11,6 +10,13 @@ type propType = {
   setLocation: setLocationState;
 };
 
+/**
+ * 住所を検索しその場所へ移動する。
+ * ・緯度,経度 を入力した場合、その場所へ移動する(googlemapでコピーした経緯を貼り付け)
+ * https://github.com/geolonia/normalize-japanese-addresses
+ * @param param0
+ * @returns
+ */
 const SearchLocation: VFC<propType> = ({ setLocation }) => {
   const iconSize = '30px';
   const regexp = /^\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*$/;
