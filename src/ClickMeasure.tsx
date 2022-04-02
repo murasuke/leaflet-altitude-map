@@ -55,6 +55,11 @@ const GPS: VFC<propType> = ({
     }
   };
 
+  const onClearClick = () => {
+    const marker = markerRef.current as MarkerRef;
+    setPolyline([marker.getLatLng()]);
+  };
+
   const eventHandlers = useMemo(
     () => ({
       dragstart: () => {
@@ -117,7 +122,7 @@ const GPS: VFC<propType> = ({
             size={iconSize}
             onClick={() => onclick()}
           />
-          <ReactTooltip type="info" place="right" />
+          <ReactTooltip type="success" place="right" />
         </div>
       </Control>
       {measureMode && (
@@ -128,10 +133,10 @@ const GPS: VFC<propType> = ({
             position={location}
             ref={markerRef}
           >
-            <Popup ref={popRef}>
+            <Popup className="measure-popup" ref={popRef}>
               {polylineDistance(polyline).toFixed(3) + 'km'}
 
-              <div className="measure-clear" onClick={() => setPolyline([])}>
+              <div className="measure-clear" onClick={() => onClearClick()}>
                 クリア
               </div>
             </Popup>

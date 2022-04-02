@@ -33,10 +33,26 @@ body {
   filter: hue-rotate(240deg)
 }
 
-div.measure-clear {
-  font-size: 11px;
-  color: darkblue;
-  text-align: center;
+div.measure-popup {
   user-select:none;
 }
+
+div.measure-clear {
+  font-size: 11px;
+  color: blue;
+  text-align: center;
+  font-weight: 700;
+}
 div.measure-clear:hover{ text-decoration: underline;}
+
+div.search-location {
+
+}
+div.search-location input {
+  margin:4px
+}
+div.search-location button {
+  margin:0px 4px
+}
+
+

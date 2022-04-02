@@ -9,6 +9,7 @@ import LocationDispArea from './LocationDispArea';
 import GPS from './GPS';
 import LocationTracer from './LocationTracer';
 import ClickMeasure from './ClickMeasure';
+import SearchLocation from './SearchLocation';
 
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -38,13 +39,17 @@ const App: VFC = () => {
       <LocationDispArea location={location} />
       <GPS setLocation={setLocation} />
       <LocationTracer />
-      <ScaleControl />
+
       <ClickMeasure
         location={location}
         setLocation={setLocation}
         measureMode={measureMode}
         setMeasureMode={setMeasureMode}
       />
+
+      <SearchLocation setLocation={setLocation} />
+
+      <ScaleControl />
     </LayredMap>
   );
 };
