@@ -45,14 +45,31 @@ div.measure-clear {
 }
 div.measure-clear:hover{ text-decoration: underline;}
 
-div.search-location {
+div.search-location:hover .search-location-icon{
+  display: none;
+}
 
+div.search-location:focus-within .search-location-icon{
+  display: none;
 }
-div.search-location input {
-  margin:4px
+
+
+div.search-location div.search-location-input{
+  display:none;
 }
-div.search-location button {
+
+
+div.search-location:hover div.search-location-input{
+  display:block;
+  margin:4px;
+}
+
+div.search-location:focus-within div.search-location-input{
+  display:block;
+  margin:4px;
+}
+
+
+div.search-location-input button {
   margin:0px 4px
 }
-
-
