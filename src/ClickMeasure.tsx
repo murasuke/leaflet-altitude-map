@@ -60,6 +60,13 @@ const GPS: VFC<propType> = ({
     setPolyline([marker.getLatLng()]);
   };
 
+  const onRestoreLastClick = () => {
+    if (polyline.length > 0) {
+      setLocation(polyline.slice(-2)[0]);
+      setPolyline((prev) => prev.slice(0, -1));
+    }
+  };
+
   const eventHandlers = useMemo(
     () => ({
       dragstart: () => {
@@ -135,7 +142,12 @@ const GPS: VFC<propType> = ({
           >
             <Popup className="measure-popup" ref={popRef}>
               {polylineDistance(polyline).toFixed(3) + 'km'}
-
+              <div
+                className="measure-clear"
+                onClick={() => onRestoreLastClick()}
+              >
+                1つ戻る
+              </div>
               <div className="measure-clear" onClick={() => onClearClick()}>
                 クリア
               </div>
