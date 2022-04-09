@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip';
 import { BsRulers } from 'react-icons/bs';
 import { setLocationState } from './utils/altitude';
 import { polylineDistance } from './utils/distance';
+import { iconSize } from './utils/const';
 
 export type setMeasureModeState = React.Dispatch<React.SetStateAction<boolean>>;
 
@@ -32,7 +33,6 @@ const GPS: VFC<propType> = ({
   setMeasureMode,
 }) => {
   const [polyline, setPolyline] = useState<LatLngLiteral[]>([]);
-  const iconSize = '30px';
   const markerRef = useRef<MarkerRef>(null);
   const popRef = useRef<PopupRef>(null);
   const map = useMap();

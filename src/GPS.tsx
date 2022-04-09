@@ -4,6 +4,7 @@ import Control from 'react-leaflet-custom-control';
 import ReactTooltip from 'react-tooltip';
 import { BiCurrentLocation } from 'react-icons/bi';
 import { setLocationState } from './utils/altitude';
+import { iconSize } from './utils/const';
 
 type propType = {
   setLocation: setLocationState;
@@ -15,7 +16,6 @@ type propType = {
  * ・マップを移動する
  */
 const GPS: VFC<propType> = ({ setLocation }) => {
-  const iconSize = '30px';
   const map = useMap();
 
   // 現在位置を取得してマップを移動する

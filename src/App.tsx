@@ -10,6 +10,7 @@ import GPS from './GPS';
 import LocationTracer from './LocationTracer';
 import ClickMeasure from './ClickMeasure';
 import SearchLocation from './SearchLocation';
+import RegistText from './RegistText';
 
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -34,7 +35,8 @@ const App: VFC = () => {
   return !location ? null : (
     <LayredMap center={location}>
       {!measureMode && (
-        <LocationMarker location={location} setLocation={setLocation} />
+        // <LocationMarker location={location} setLocation={setLocation} />
+        <RegistText location={location} setLocation={setLocation} />
       )}
       <LocationDispArea location={location} />
       <GPS setLocation={setLocation} />

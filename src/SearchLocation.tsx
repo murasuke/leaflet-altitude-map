@@ -4,8 +4,8 @@ import Control from 'react-leaflet-custom-control';
 import { FaSearchLocation } from 'react-icons/fa';
 import { normalize } from '@geolonia/normalize-japanese-addresses';
 import { setLocationState } from './utils/altitude';
+import { iconSize } from './utils/const';
 
-type MEvent = React.MouseEvent<HTMLDivElement | SVGElement, MouseEvent>;
 type propType = {
   setLocation: setLocationState;
 };
@@ -18,13 +18,13 @@ type propType = {
  * @returns
  */
 const SearchLocation: VFC<propType> = ({ setLocation }) => {
-  const iconSize = '30px';
   const regexp = /^\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*$/;
   const [address, setAddress] = useState('');
   const map = useMap();
   const onClick = () => {
     const result = regexp.exec(address);
     if (result) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [all, lat, lng] = result;
       const latLng = { lat: parseFloat(lat), lng: parseFloat(lng) };
       map.flyTo(latLng, 14);
