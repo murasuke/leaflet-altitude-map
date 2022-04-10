@@ -6,9 +6,13 @@ import { BsRecordCircle } from 'react-icons/bs';
 import ReactTooltip from 'react-tooltip';
 import NoSleep from 'nosleep.js';
 import { distance, polylineDistance } from './utils/distance';
+import { iconSize } from './utils/const';
 
+/**
+ * 地図上に現在の位置を表示し、移動に合わせて線を引く
+ * @returns
+ */
 const PositionTracer: VFC = () => {
-  const iconSize = '30px';
   const [locationLog, setLocationLog] = useState<[number, number][]>([]);
   const [recording, setRecording] = useState(false);
   const noSleepRef = useRef<NoSleep>(new NoSleep());

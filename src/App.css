@@ -73,3 +73,14 @@ div.search-location:focus-within div.search-location-input{
 div.search-location-input button {
   margin:0px 4px
 }
+
+.both-end-box {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-button{
+  padding: 0px 2px;
+  border: solid black 1px;
+}
+
