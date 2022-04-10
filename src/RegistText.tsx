@@ -2,6 +2,7 @@ import { VFC, useState, useEffect } from 'react';
 import { LatLng, LatLngLiteral, Marker as LeafletMarker } from 'leaflet';
 import { Marker, Popup, useMapEvents } from 'react-leaflet';
 import { setLocationState } from './utils/altitude';
+import { loadPopup, storePopup } from './utils/dataStore';
 
 type propType = {
   location: LatLngLiteral;
@@ -9,6 +10,7 @@ type propType = {
 };
 
 type LatLngText = LatLngLiteral & { text: string };
+const gmap = 'https://www.google.com/maps/search/?api=1&query=';
 
 /**
  * 位置表示アイコン
@@ -17,6 +19,11 @@ type LatLngText = LatLngLiteral & { text: string };
  */
 const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
   const [markers, setMarkers] = useState<LatLngText[]>([]);
+  useEffect(() => {
+    const markers = loadPopup();
+    if (markers) setMarkers(JSON.parse(markers));
+  }, []);
+
   useMapEvents({
     click: (e) => {
       setLocation(e.latlng);
@@ -27,16 +34,11 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
         } else {
           newAry = [...ary.slice(0, ary.length - 1), { ...e.latlng, text: '' }];
         }
-        localStorage.setItem('Markers', JSON.stringify(newAry));
+        storePopup(JSON.stringify(newAry));
         return newAry;
       });
     },
   });
-
-  useEffect(() => {
-    const markers = localStorage.getItem('Markers');
-    if (markers) setMarkers(JSON.parse(markers));
-  }, []);
 
   const setText = (marker: LatLngLiteral, text: string) => {
     const index = markers.findIndex(
@@ -47,7 +49,22 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
       setMarkers((ary) => {
         const cpy = ary.slice();
         cpy.splice(index, 1, { ...ary[index], text });
-        localStorage.setItem('Markers', JSON.stringify(cpy));
+        storePopup(JSON.stringify(cpy));
+        return cpy;
+      });
+    }
+  };
+
+  const delPopup = (marker: LatLngLiteral) => {
+    const index = markers.findIndex(
+      (item) => item.lat === marker.lat && item.lng === marker.lng,
+    );
+
+    if (index >= 0) {
+      setMarkers((ary) => {
+        const cpy = ary.slice();
+        cpy.splice(index, 1);
+        storePopup(JSON.stringify(cpy));
         return cpy;
       });
     }
@@ -58,15 +75,22 @@ const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
       {markers.map((marker) => (
         <Marker position={marker} key={marker.lat}>
           <Popup>
-            {`lat:${marker.lat.toFixed(5)} lng:${marker.lng.toFixed(5)}`}
+            <a href={`${gmap}${marker.lat},${marker.lng}`} target="blank">
+              {`(${marker.lat.toFixed(5)}, ${marker.lng.toFixed(5)})`}
+            </a>
             <br />
-            <input
-              type="text"
+            <textarea
               value={marker.text}
               onChange={(e) => {
                 setText(marker, e.target.value);
               }}
-            ></input>
+            ></textarea>
+            <div className="both-end-box">
+              <button className="popup-button" onClick={() => delPopup(marker)}>
+                削除
+              </button>
+              {/* <button className="popup-button">更新</button> */}
+            </div>
           </Popup>
         </Marker>
       ))}
