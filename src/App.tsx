@@ -2,6 +2,7 @@ import { VFC, useState, useEffect } from 'react';
 import { LatLngLiteral } from 'leaflet';
 import { ScaleControl } from 'react-leaflet';
 import './utils/initLeaflet';
+import useMapParams from './utils/useMapParams';
 
 import LayredMap from './LayeredMap';
 import LocationMarker from './LocationMarker';
@@ -10,6 +11,7 @@ import GPS from './GPS';
 import LocationTracer from './LocationTracer';
 import ClickMeasure from './ClickMeasure';
 import SearchLocation from './SearchLocation';
+import URLRewriter from './URLRewriter';
 import RegistText from './RegistText';
 
 import 'leaflet/dist/leaflet.css';
@@ -25,18 +27,24 @@ const App: VFC = () => {
   const [location, setLocation] = useState<LatLngLiteral>();
   const [measureMode, setMeasureMode] = useState(false);
 
+  const mapParam = useMapParams();
+
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((e) => {
-      const { latitude: lat, longitude: lng } = e.coords;
-      setLocation({ lat, lng });
-    });
+    if (mapParam.center) {
+      setLocation(mapParam.center);
+    } else {
+      navigator.geolocation.getCurrentPosition((e) => {
+        const { latitude: lat, longitude: lng } = e.coords;
+        setLocation({ lat, lng });
+      });
+    }
   }, []);
 
   return !location ? null : (
-    <LayredMap center={location}>
+    <LayredMap {...mapParam} center={location}>
       {!measureMode && (
-        // <LocationMarker location={location} setLocation={setLocation} />
-        <RegistText location={location} setLocation={setLocation} />
+        <LocationMarker location={location} setLocation={setLocation} />
+        // <RegistText location={location} setLocation={setLocation} />
       )}
       <LocationDispArea location={location} />
       <GPS setLocation={setLocation} />
@@ -52,6 +60,7 @@ const App: VFC = () => {
       <SearchLocation setLocation={setLocation} />
 
       <ScaleControl />
+      <URLRewriter location={location} {...mapParam} />
     </LayredMap>
   );
 };

@@ -1,6 +1,5 @@
-import { VFC, useEffect, useState } from 'react';
+import { VFC, useEffect, useState, useCallback } from 'react';
 import { LatLngLiteral } from 'leaflet';
-
 import Control from 'react-leaflet-custom-control';
 import { getAltitude, AltitudeDetail } from './utils/altitude';
 
@@ -21,9 +20,11 @@ const LocationIndicator: VFC<{ location: LatLngLiteral }> = ({ location }) => {
 
   // 位置から標高を取得する
   useEffect(() => {
-    getAltitude(location.lat, location.lng, (height, detail) => {
-      setAlt(detail);
-    });
+    if (location) {
+      getAltitude(location.lat, location.lng, (height, detail) => {
+        setAlt(detail);
+      });
+    }
   }, [location]);
 
   return (
