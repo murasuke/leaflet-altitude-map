@@ -12,8 +12,7 @@ type propType = {
 
 /**
  * GPSアイコン
- * ・現在位置を取得
- * ・マップを移動する
+ * ・現在位置を取得してその位置を表示する
  */
 const GPS: VFC<propType> = ({ setLocation }) => {
   const map = useMap();

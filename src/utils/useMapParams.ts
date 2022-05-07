@@ -1,14 +1,19 @@
 import { LatLngLiteral } from 'leaflet';
 import { useLocation } from 'react-router-dom';
+import { overlayLayers } from './layerList';
 /**
- * ・url querystring definition
- *   query=lat,lng
- *   zoom=
- *   map=[1,2,3,4,5,6]
- *   overlay1
- *   overlay2
- *   overlay3
- *  const param = useMapParam();
+ * ・Querystring definition
+ *   ・lat,lngは緯度、経度(浮動小数)
+ * 　・overlay
+ *     query=lat,lng
+ *     zoom=1～18
+ *     map=[0,1,2,3,4,5]   ・・・baseLayersの選択Index
+ *     overlay0   ・・・存在すれば「赤色立体地図」をオーバーレイ表示
+ *     overlay1   ・・・存在すれば「地質図」をオーバーレイ表示
+ *     overlay2   ・・・存在すれば「地すべり地形分布図'」をオーバーレイ表示
+ *
+ * ・例
+ *   query=36.05340134559295,138.05334091186526&map=2&zoom=14&overlay2
  */
 
 export type MapParam = {
@@ -42,15 +47,8 @@ const useMapParams = (): MapParam => {
     queryVal = { ...queryVal, mapIndex };
   }
 
-  const overlay: boolean[] = [];
-  [...Array(10).keys()].forEach((i) => {
-    if (query.has(`overlay${i}`)) {
-      overlay.push(true);
-    }
-  });
+  const overlay = overlayLayers.map((v, i) => query.has(`overlay${i}`));
   queryVal = { ...queryVal, overlay };
-
-  console.log(queryVal);
 
   return {
     zoom: 14,

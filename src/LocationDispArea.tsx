@@ -1,4 +1,4 @@
-import { VFC, useEffect, useState, useCallback } from 'react';
+import { VFC, useEffect, useState } from 'react';
 import { LatLngLiteral } from 'leaflet';
 import Control from 'react-leaflet-custom-control';
 import { getAltitude, AltitudeDetail } from './utils/altitude';
@@ -8,7 +8,7 @@ import { getAltitude, AltitudeDetail } from './utils/altitude';
  * ・クリックした位置の「標高」「緯度」「経度」を表示するエリア
  * ・propsで位置を受け取り、位置から「標高」を求めて表示する
  */
-const LocationIndicator: VFC<{ location: LatLngLiteral }> = ({ location }) => {
+const LocationDispArea: VFC<{ location: LatLngLiteral }> = ({ location }) => {
   const f = (num: number, fixed = 6) =>
     ('             ' + num.toFixed(fixed)).slice(-6 - fixed);
   const formatAlt = (alt: AltitudeDetail) =>
@@ -36,4 +36,4 @@ const LocationIndicator: VFC<{ location: LatLngLiteral }> = ({ location }) => {
   );
 };
 
-export default LocationIndicator;
+export default LocationDispArea;

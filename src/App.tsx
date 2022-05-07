@@ -31,14 +31,16 @@ const App: VFC = () => {
 
   useEffect(() => {
     if (mapParam.center) {
+      // querystringで位置を指定した場合
       setLocation(mapParam.center);
     } else {
+      // 位置を指定しない場合は現在位置を表示
       navigator.geolocation.getCurrentPosition((e) => {
         const { latitude: lat, longitude: lng } = e.coords;
         setLocation({ lat, lng });
       });
     }
-  }, []);
+  }, [mapParam.center?.lat, mapParam.center?.lng]);
 
   return !location ? null : (
     <LayredMap {...mapParam} center={location}>

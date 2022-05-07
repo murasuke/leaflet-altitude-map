@@ -9,7 +9,9 @@ import { distance, polylineDistance } from './utils/distance';
 import { iconSize } from './utils/const';
 
 /**
- * 地図上に現在の位置を表示し、移動に合わせて線を引く
+ * 地図上に現在の位置を表示し、移動に合わせて線を引く(位置情報のトレース)
+ * ・スマホでディスプレイがOffになり、位置情報が取得できなくなるのを防ぐため
+ *   「nosleep.js」を利用する(ディスプレイが常に点灯状態になる)
  * @returns
  */
 const PositionTracer: VFC = () => {

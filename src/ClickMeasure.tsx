@@ -26,7 +26,7 @@ type propType = {
  *   ・終了地点はdragイベント中に、移動先の値で更新する(PolyLineコントロールが線を表示する)
  *   ・開始地点が前回の最後の位置と同じ場合、連続したDrag&Dropと判断し、終点を追加する
  */
-const GPS: VFC<propType> = ({
+const ClickMeasure: VFC<propType> = ({
   location,
   setLocation,
   measureMode,
@@ -160,4 +160,4 @@ const GPS: VFC<propType> = ({
   );
 };
 
-export default GPS;
+export default ClickMeasure;

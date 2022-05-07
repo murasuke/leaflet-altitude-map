@@ -8,7 +8,10 @@ import { MapParam } from './utils/useMapParams';
 type Params = MapParam & { location: LatLngLiteral };
 
 /**
- * 画面の状態をURLに反映する(ブックマーク)
+ * 画面の状態をURLに反映するためのコンポーネント
+ * ・「戻る、進む」 ができるようになる
+ * ・「ブックマーク」で現在位置、表示設定を保存、復元できる
+ * ・URLをコピペして他の人に伝える(位置と設定)ことができる
  */
 const URLRewriter: VFC<Params> = (param) => {
   const makeQuery = (alt?: LatLngLiteral, map?: MapParam) => {
@@ -16,7 +19,7 @@ const URLRewriter: VFC<Params> = (param) => {
       return '';
     }
     let query = `?query=${alt.lat},${alt.lng}&map=${map.mapIndex}&zoom=${map.zoom}`;
-    map.overlay?.forEach((val, idx) => {
+    map.overlay.forEach((val, idx) => {
       query += val ? `&overlay${idx}` : '';
     });
     return query;
@@ -24,14 +27,26 @@ const URLRewriter: VFC<Params> = (param) => {
 
   const [mapState, setMapState] = useState<MapParam>({ ...param });
   const map = useMap();
-  const navi = useNavigate();
+  const navigate = useNavigate();
 
-  const rewriteUrl = useCallback(() => {
+  useEffect(() => {
     const query = makeQuery(param.location, mapState);
-    // window.history.pushState(null, '', query);
-    navi(query);
-  }, [param.location, mapState]);
+    // 戻る場合URLの履歴に追加しない
+    if (query !== window.history.state.usr) {
+      navigate(query, { state: query });
+    } else {
+      // 戻る場合はURLに指定された位置へ移動する
+      map.flyTo(param.location);
+    }
+  }, [
+    param.location.lat,
+    param.location.lng,
+    mapState.zoom,
+    mapState.overlay,
+    mapState.mapIndex,
+  ]);
 
+  // Leafletのイベントを捕捉して、Stateへ反映する
   useMapEvents({
     baselayerchange: (e) => {
       const mapIndex = baseLayers.findIndex((value) => value.name === e.name);
@@ -41,7 +56,7 @@ const URLRewriter: VFC<Params> = (param) => {
     },
     overlayadd: (e) => {
       const idx = overlayLayers.findIndex((value) => value.name === e.name);
-      let overlay = mapState.overlay?.slice() ?? [false, false, false];
+      const overlay = mapState.overlay.slice();
       overlay[idx] = true;
       setMapState((prev) => {
         return { ...prev, overlay };
@@ -49,7 +64,7 @@ const URLRewriter: VFC<Params> = (param) => {
     },
     overlayremove: (e) => {
       const idx = overlayLayers.findIndex((value) => value.name === e.name);
-      let overlay = mapState.overlay?.slice() ?? [false, false, false];
+      const overlay = mapState.overlay.slice();
       overlay[idx] = false;
       setMapState((prev) => {
         return { ...prev, overlay };
@@ -61,16 +76,6 @@ const URLRewriter: VFC<Params> = (param) => {
         return { ...prev, zoom };
       });
     },
-  });
-
-  useEffect(() => {
-    rewriteUrl();
-  }, [param.location, mapState, rewriteUrl]);
-
-  useEffect(() => {
-    window.addEventListener('popstate', (e) => {
-      navi(-1);
-    });
   });
 
   return null;

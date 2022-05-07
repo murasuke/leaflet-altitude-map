@@ -13,7 +13,7 @@ const gmap = 'https://www.google.com/maps/search/?api=1&query=';
 /**
  * 位置表示アイコン
  * ・クリックした位置にアイコンを表示する
- *   ・クリックした位置を、親コンポーネント(App)へ通知する(state)し、その位置にMarkerを表示する
+ *   ・クリックした位置を、親コンポーネント(App)へ通知。その位置にMarkerを表示する
  */
 const LocationMarker: VFC<propType> = ({ location, setLocation }) => {
   useMapEvents({
